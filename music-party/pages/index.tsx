@@ -34,6 +34,7 @@ export default function Home() {
     conn.current.start();
   }, [conn]);
   useEffect(() => {
+    // @ts-ignore
     player.current.currentTime = playtime;
   }, [playtime])
 
@@ -58,14 +59,14 @@ export default function Home() {
         <div className={styles.card}>
           <p className={styles.description}>Queue</p>
           <ul>
-          {a.map(v=>{
-            return (
-              <li key={v.name}>
-                {v.name} - {v.artist}
-              </li>
-            )
-          })}
-        </ul>
+            {a.map((v: { name: string, artist: string }) => {
+              return (
+                <li key={v.name}>
+                  {v.name} - {v.artist}
+                </li>
+              )
+            })}
+          </ul>
         </div>
 
         <audio src={src} controls ref={player} autoPlay />
