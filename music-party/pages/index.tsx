@@ -217,9 +217,10 @@ export default function Home() {
               {!inited ? <Text>Initializing...</Text> :
                 <MyPlaylist enqueue={(id) => {
                   conn.current!.addMusicToPlayList(id)
-                    .then((resp) => {
-                      if (resp) toastEnqueueOk(t);
-                      else toastError(t, `Enqueuing music {id: ${id}} failed.`);
+                    .then(() => {
+                      toastEnqueueOk(t);
+                    }).catch(() => {
+                      toastError(t, `Enqueuing music {id: ${id}} failed.`);
                     })
                 }} />
               }
