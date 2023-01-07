@@ -48,4 +48,47 @@ public class NeteaseApi
         var ar = (string)j["songs"][0]["ar"][0]["name"];
         return new Music(id, name, ar);
     }
+
+    public async Task<IEnumerable<NeteaseUser>> SearchNeteaseUsersAsync(string keyword)
+    {
+        var resp = await _http.GetStringAsync(_url + $"/search?type=1002&keywords={keyword}");
+        var j = JsonNode.Parse(resp);
+        if ((int)j["code"] != 200)
+            throw new Exception($"Unable to search user, keyword: {keyword}");
+
+        return j["result"]["userprofiles"].AsArray()
+            .Select(x => new NeteaseUser(x["userId"].GetValue<long>().ToString(), (string)x["nickname"])).ToList();
+    }
+
+    public async Task<IEnumerable<PlayList>> GetUserPlaylistAsync(string uid)
+    {
+        var resp = await _http.GetStringAsync(_url + $"/user/playlist?uid={uid}");
+        var j = JsonNode.Parse(resp);
+        if ((int)j["code"] != 200)
+            throw new Exception($"Unable to get user playlist, uid: {uid}");
+
+        //return j["result"]["playlist"].AsArray()
+        //    .Select(x => new PlayList(x["id"].GetValue<long>().ToString(), (string)x["name"])).ToList();
+
+        return (from b in j["playlist"].AsArray()
+            let id = b["id"].GetValue<long>().ToString()
+            let name = (string)b["name"]
+            select new PlayList(id, name)).ToList();
+    }
+
+    public async Task<IEnumerable<Music>> GetMusicsByPlaylistAsync(string id, int offset = 0)
+    {
+        var resp = await _http.GetStringAsync(_url + $"/playlist/track/all?id={id}&limit=10&offset={offset}");
+        var j = JsonNode.Parse(resp);
+        if ((int)j["code"] != 200)
+            throw new Exception($"Unable to get playlist musics, playlist id: {id}");
+        //return j["songs"].AsArray().Select(x => new Music(j["id"].GetValue<long>().ToString(), (string)j["name"],
+        //    string.Join(" / ", j["ar"].AsArray().Select(y => (string)y["name"]))));
+
+        return (from b in j["songs"].AsArray()
+            let id2 = b["id"].GetValue<long>().ToString()
+            let name = (string)b["name"]
+            let artist = string.Join(" / ", b["ar"].AsArray().Select(y => (string)y["name"]))
+            select new Music(id2, name, artist)).ToList();
+    }
 }

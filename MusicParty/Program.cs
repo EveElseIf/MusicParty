@@ -1,3 +1,4 @@
+using AspNetCore.Proxy;
 using MusicParty;
 using MusicParty.Hub;
 
@@ -18,9 +19,14 @@ builder.Services.AddSingleton(new NeteaseApi(
 builder.Services.AddCors(op =>
 {
     op.AddPolicy("cors", p =>
-        p.WithOrigins("http://43.138.39.172").AllowAnyHeader().AllowAnyMethod().AllowCredentials()
+        p.WithOrigins(builder.Configuration["FrontEndUrl"]).AllowAnyHeader().AllowAnyMethod().AllowCredentials()
     );
 });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<UserManager>();
+builder.Services.AddAuthentication("Cookies").AddCookie("Cookies");
+builder.Services.AddProxies();
+builder.Logging.AddFilter((p, c, l) => !c.Contains("HttpProxyClient"));
 
 var app = builder.Build();
 
@@ -35,10 +41,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("cors");
 
+app.UseRouting();
+
+app.UseAuthentication();
+
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<MusicHub>("/music");
+});
 
-app.MapHub<MusicHub>("/music");
+
+app.RunHttpProxy(builder.Configuration["FrontEndUrl"]);
 
 app.Run();
