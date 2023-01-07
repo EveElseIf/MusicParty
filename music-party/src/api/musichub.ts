@@ -1,11 +1,10 @@
 import * as sr from "@microsoft/signalr"
 export class connection {
     private _conn: sr.HubConnection;
-    private _refresh: any;
-    constructor(url: string, fn: any, refresh: any, onlineUsersUpdate: () => void, chatUpdate: (chat: { name: string, content: string }) => void) {
+    constructor(url: string, fn: any, queueUpdate: () => void, onlineUsersUpdate: () => void, chatUpdate: (chat: { name: string, content: string }) => void) {
         this._conn = new sr.HubConnectionBuilder().withUrl(url).build();
         this._conn.on("SetPlaying", fn);
-        this._refresh = refresh;
+        this._conn.on("QueueUpdated", queueUpdate);
         this._conn.on("OnlineUsersUpdated", onlineUsersUpdate);
         this._conn.on("ChatUpdated", chatUpdate);
     }
@@ -16,10 +15,8 @@ export class connection {
             })
         }
     }
-    public async addMusicToPlayList(id: string): Promise<boolean> {
-        const ret = await this._conn.invoke("AddMusicToPlayList", id);
-        this._refresh();
-        return ret;
+    public async addMusicToPlayList(id: string): Promise<any> {
+        return await this._conn.invoke("AddMusicToPlayList", id);
     }
     public async getPlayList(): Promise<any> {
         return await this._conn.invoke("GetPlayList");

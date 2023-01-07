@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import React, { useEffect, useRef, useState } from 'react'
-import { connection } from '../src/api/musichub'
+import { connection, music } from '../src/api/musichub'
 import { Text, Button, Card, CardBody, CardHeader, Container, Editable, EditableInput, EditablePreview, Grid, GridItem, Heading, Input, List, ListItem, OrderedList, Tab, TabList, TabPanel, TabPanels, Tabs, useToast, Stack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Portal, useDisclosure, UnorderedList, Flex } from '@chakra-ui/react'
 import { MusicPlayer } from '../src/components/musicplayer';
 import { getProfile } from '../src/api/api';
@@ -14,7 +14,7 @@ export default function Home() {
   const [playtime, setPlaytime] = useState(0);
   const [name, setName] = useState("");
   const [ar, setAr] = useState("");
-  const [a, setA] = useState([]);
+  const [queue, setQueue] = useState<music[]>([]);
   const [userName, setUserName] = useState("");
   const [newName, setNewName] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
@@ -35,13 +35,13 @@ export default function Home() {
             setAr(params.artist);
             setPlaytime(time);
             console.log("Played: " + time);
-            const b = await conn.current!.getPlayList();
-            console.log(b);
-            setA(b);
+            const q = await conn.current!.getPlayList();
+            console.log(q);
+            setQueue(q);
           }, async () => {
-            const b = await conn.current!.getPlayList();
-            console.log(b);
-            setA(b);
+            const q = await conn.current!.getPlayList();
+            console.log(q);
+            setQueue(q);
           }, async () => {
             const users = await conn.current!.getOnlineUsers();
             setOnlineUsers(users);
@@ -178,7 +178,7 @@ export default function Home() {
                 </CardHeader>
                 <CardBody>
                   <OrderedList>
-                    {a.map((v: { name: string, artist: string }) => {
+                    {queue.map((v: { name: string, artist: string }) => {
                       return (
                         <ListItem key={v.name}>
                           {v.name} - {v.artist}

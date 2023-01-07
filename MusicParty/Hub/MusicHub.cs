@@ -91,19 +91,11 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     }
 
     // Remote invokable
-    public async Task<bool> AddMusicToPlayList(string id)
+    public async Task AddMusicToPlayList(string id)
     {
-        try
-        {
-            var music = await _neteaseApi.GetMusicAsync(id);
-            PlayList.Enqueue(music);
-            return true;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return false;
-        }
+        var music = await _neteaseApi.GetMusicAsync(id);
+        PlayList.Enqueue(music);
+        await Clients.All.SendAsync("QueueUpdated");
     }
 
     public IEnumerable<Music> GetPlayList()
