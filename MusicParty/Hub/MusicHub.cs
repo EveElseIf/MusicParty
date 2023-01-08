@@ -99,7 +99,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     public async Task AddMusicToQueue(string id)
     {
         var music = await _neteaseApi.GetMusicAsync(id);
-        MusicQueue.Enqueue((music, _userManager.FindUserById(Context.User.Identity.Name).Name));
+        MusicQueue.Enqueue((music, Context.User.Identity.Name));
         await Clients.All.SendAsync("QueueUpdated");
     }
 
