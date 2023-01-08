@@ -139,7 +139,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     {
         if (NowPlaying is not null)
         {
-            await SetPlaying2(Clients.Caller, NowPlaying?.Item1, NowPlaying?.enqueuerId,
+            await SetPlaying2(Clients.Caller, NowPlaying?.Item1, _userManager.FindUserById(NowPlaying?.enqueuerId).Name,
                 (int)(DateTime.Now - _time).TotalSeconds);
         }
     }
