@@ -21,8 +21,8 @@ export async function getMyPlaylist(): Promise<Playlist[]> {
     return j;
 }
 
-export async function getMusicByPlaylist(id: string): Promise<Music[]> {
-    const resp = await fetch(`/api/playlistmusics/${id}`);
+export async function getMusicsByPlaylist(id: string, page: number): Promise<Music[]> {
+    const resp = await fetch(`/api/playlistmusics/${id}?page=${page}`);
     const j = await resp.json();
     return j;
 }

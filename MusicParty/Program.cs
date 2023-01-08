@@ -26,7 +26,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<UserManager>();
 builder.Services.AddAuthentication("Cookies").AddCookie("Cookies");
 builder.Services.AddProxies();
-builder.Logging.AddFilter((p, c, l) => !c.Contains("HttpProxyClient"));
 
 var app = builder.Build();
 

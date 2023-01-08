@@ -7,8 +7,8 @@ namespace MusicParty.Hub;
 [Authorize]
 public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 {
-    private static PlayableMusic? NowPlaying { get; set; }
-    private static Queue<Music> PlayList { get; } = new();
+    private static (PlayableMusic, string enqueuerId)? NowPlaying { get; set; }
+    private static Queue<(Music, string enqueuerId)> MusicQueue { get; } = new();
     private static HashSet<string> OnlineUsers { get; } = new();
     private static Queue<(string name, string content)> Last5Chat { get; } = new();
     private static DateTime _time = default;
@@ -36,8 +36,11 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     {
         if (NowPlaying is not null)
         {
-            await SetPlaying2(Clients.Caller, NowPlaying, (int)(DateTime.Now - _time).TotalSeconds);
+            await SetPlaying2(Clients.Caller, NowPlaying?.Item1,
+                _userManager.FindUserById(NowPlaying?.enqueuerId).Name, (int)(DateTime.Now - _time).TotalSeconds);
         }
+
+        await Clients.Caller.SendAsync("QueueUpdated");
 
         OnlineUsers.Add(Context.User.Identity.Name);
         await Clients.All.SendAsync("OnlineUsersUpdated");
@@ -63,14 +66,16 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         {
             if (NowPlaying is null)
             {
-                if (PlayList.TryDequeue(out var music))
+                if (MusicQueue.TryDequeue(out var music))
                 {
                     try
                     {
+                        await _context.Clients.All.SendAsync("QueueUpdated");
                         // start playing
-                        NowPlaying = await _neteaseApi.GetPlayableMusicAsync(music);
+                        NowPlaying = (await _neteaseApi.GetPlayableMusicAsync(music.Item1), music.enqueuerId);
                         _time = DateTime.Now;
-                        await SetPlaying(NowPlaying, 0);
+                        await SetPlaying(NowPlaying?.Item1,
+                            _userManager.FindUserById(NowPlaying?.enqueuerId).Name, 0);
                     }
                     catch (Exception ex)
                     {
@@ -80,7 +85,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
             }
             else
             {
-                if ((DateTime.Now - _time).TotalMilliseconds >= NowPlaying.Length) // playing is over
+                if ((DateTime.Now - _time).TotalMilliseconds >= NowPlaying?.Item1.Length) // playing is over
                 {
                     NowPlaying = null;
                 }
@@ -91,16 +96,19 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     }
 
     // Remote invokable
-    public async Task AddMusicToPlayList(string id)
+    public async Task AddMusicToQueue(string id)
     {
         var music = await _neteaseApi.GetMusicAsync(id);
-        PlayList.Enqueue(music);
+        MusicQueue.Enqueue((music, _userManager.FindUserById(Context.User.Identity.Name).Name));
         await Clients.All.SendAsync("QueueUpdated");
     }
 
-    public IEnumerable<Music> GetPlayList()
+    public record MusicEnqueueOrder(Music Music, string Enqueuer);
+
+    public IEnumerable<MusicEnqueueOrder> GetMusicQueue()
     {
-        return PlayList.ToArray();
+        return MusicQueue.Select(x => new MusicEnqueueOrder(x.Item1, _userManager.FindUserById(x.enqueuerId).Name))
+            .ToList();
     }
 
     public void NextSong()
@@ -126,15 +134,29 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         Last5Chat.Enqueue((model.Name, model.Content));
         await Clients.All.SendAsync("ChatUpdated", model);
     }
-    // End remote invokable
 
-    public async Task SetPlaying(PlayableMusic music, int playedTime)
+    public async Task RequestSetNowPlaying()
     {
-        await _context.Clients.All.SendAsync(nameof(SetPlaying), music, playedTime);
+        if (NowPlaying is not null)
+        {
+            await SetPlaying2(Clients.Caller, NowPlaying?.Item1, NowPlaying?.enqueuerId,
+                (int)(DateTime.Now - _time).TotalSeconds);
+        }
     }
 
-    public async Task SetPlaying2(IClientProxy target, PlayableMusic music, int playedTime)
+    public async Task RequestQueueUpdate()
     {
-        await target.SendAsync(nameof(SetPlaying), music, playedTime);
+        await Clients.All.SendAsync("QueueUpdated");
+    }
+    // End remote invokable
+
+    public async Task SetPlaying(PlayableMusic music, string enqueuer, int playedTime)
+    {
+        await _context.Clients.All.SendAsync(nameof(SetPlaying), music, enqueuer, playedTime);
+    }
+
+    public async Task SetPlaying2(IClientProxy target, PlayableMusic music, string enqueuer, int playedTime)
+    {
+        await target.SendAsync(nameof(SetPlaying), music, enqueuer, playedTime);
     }
 }

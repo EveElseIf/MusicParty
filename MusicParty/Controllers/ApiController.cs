@@ -87,9 +87,9 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet, Route("playlistmusics/{id}"), Authorize]
-    public async Task<IActionResult> PlaylistMusics(string id)
+    public async Task<IActionResult> PlaylistMusics(string id, [FromQuery] int page = 0)
     {
-        var musics = await _neteaseApi.GetMusicsByPlaylistAsync(id);
+        var musics = await _neteaseApi.GetMusicsByPlaylistAsync(id, page * 10);
         return Ok(musics);
     }
 }
