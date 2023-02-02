@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  neteaseapi:
+    build: netease-api
+    expose:
+      - 3000
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'fetch(\"http://localhost:3000\")' | node"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  frontend:
+    build: music-party
+    expose:
+      - 3000
+  backend:
+    build: MusicParty
+    environment:
+      NeteaseApiUrl: "http://neteaseapi:3000"
+      FrontEndUrl: "http://frontend:3000"
+    depends_on:
+      neteaseapi:
+        condition: service_healthy
+    ports:
+      - "2706:5000"
+    tty: true
+    restart: on-failure

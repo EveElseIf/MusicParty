@@ -1,0 +1,143 @@
+{
+    "songs": [
+        {
+            "name": "雨とアスファルト",
+            "id": 26213688,
+            "pst": 0,
+            "t": 0,
+            "ar": [
+                {
+                    "id": 15979,
+                    "name": "40mP",
+                    "tns": [],
+                    "alias": []
+                }
+            ],
+            "alia": [],
+            "pop": 20,
+            "st": 0,
+            "rt": "",
+            "fee": 0,
+            "v": 13,
+            "crbt": null,
+            "cf": "",
+            "al": {
+                "id": 2422237,
+                "name": "シンタイソクテイ",
+                "picUrl": "https://p2.music.126.net/2fmb8zAWuKV6GX8TPHQg0w==/2438716790432267.jpg",
+                "tns": [],
+                "pic": 2438716790432267
+            },
+            "dt": 275000,
+            "h": {
+                "br": 320000,
+                "fid": 0,
+                "size": 11028054,
+                "vd": -53600,
+                "sr": 44100
+            },
+            "m": {
+                "br": 192000,
+                "fid": 0,
+                "size": 6616912,
+                "vd": -51100,
+                "sr": 44100
+            },
+            "l": {
+                "br": 128000,
+                "fid": 0,
+                "size": 4411342,
+                "vd": -49699,
+                "sr": 44100
+            },
+            "sq": null,
+            "hr": null,
+            "a": null,
+            "cd": "1",
+            "no": 10,
+            "rtUrl": null,
+            "ftype": 0,
+            "rtUrls": [],
+            "djId": 0,
+            "copyright": 2,
+            "s_id": 0,
+            "mark": 9007199255003136,
+            "originCoverType": 0,
+            "originSongSimpleData": null,
+            "tagPicList": null,
+            "resourceState": true,
+            "version": 13,
+            "songJumpInfo": null,
+            "entertainmentTags": null,
+            "awardTags": null,
+            "single": 0,
+            "noCopyrightRcmd": null,
+            "rtype": 0,
+            "rurl": null,
+            "mst": 9,
+            "cp": 663018,
+            "mv": 0,
+            "publishTime": 1363708800007
+        }
+    ],
+    "privileges": [
+        {
+            "id": 26213688,
+            "fee": 0,
+            "payed": 0,
+            "st": 0,
+            "pl": 320000,
+            "dl": 320000,
+            "sp": 7,
+            "cp": 1,
+            "subp": 1,
+            "cs": false,
+            "maxbr": 320000,
+            "fl": 320000,
+            "toast": false,
+            "flag": 256,
+            "preSell": false,
+            "playMaxbr": 320000,
+            "downloadMaxbr": 320000,
+            "maxBrLevel": "exhigh",
+            "playMaxBrLevel": "exhigh",
+            "downloadMaxBrLevel": "exhigh",
+            "plLevel": "exhigh",
+            "dlLevel": "exhigh",
+            "flLevel": "exhigh",
+            "rscl": null,
+            "freeTrialPrivilege": {
+                "resConsumable": false,
+                "userConsumable": false,
+                "listenType": null
+            },
+            "chargeInfoList": [
+                {
+                    "rate": 128000,
+                    "chargeUrl": null,
+                    "chargeMessage": null,
+                    "chargeType": 0
+                },
+                {
+                    "rate": 192000,
+                    "chargeUrl": null,
+                    "chargeMessage": null,
+                    "chargeType": 0
+                },
+                {
+                    "rate": 320000,
+                    "chargeUrl": null,
+                    "chargeMessage": null,
+                    "chargeType": 0
+                },
+                {
+                    "rate": 999000,
+                    "chargeUrl": null,
+                    "chargeMessage": null,
+                    "chargeType": 1
+                }
+            ]
+        }
+    ],
+    "code": 200
+}
