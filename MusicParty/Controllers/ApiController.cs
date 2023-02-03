@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MusicParty.MusicApi;
 
 namespace MusicParty.Controllers;
 
@@ -7,89 +8,93 @@ namespace MusicParty.Controllers;
 [Route("[controller]")]
 public class ApiController : ControllerBase
 {
-    private readonly NeteaseApi _neteaseApi;
+    private readonly IEnumerable<IMusicApi> _musicApis;
     private readonly UserManager _userManager;
     private readonly ILogger<ApiController> _logger;
 
-    public ApiController(NeteaseApi neteaseApi, UserManager userManager, ILogger<ApiController> logger)
+    public ApiController(IEnumerable<IMusicApi> musicApis, UserManager userManager, ILogger<ApiController> logger)
     {
-        _neteaseApi = neteaseApi;
+        _musicApis = musicApis;
         _userManager = userManager;
         _logger = logger;
     }
 
-    [HttpGet, Route("Test")]
-    public IActionResult Test()
-    {
-        return Ok(new { Test = "Hello World" });
-    }
+    [HttpGet, Route("MusicServices")]
+    public IActionResult MusicServices() => Ok(_musicApis.Select(a => a.ServiceName).ToList());
 
     [HttpGet, Route("New")]
     public async Task<IActionResult> New()
     {
-        var id = HttpContext.User.Identity.Name;
+        var id = HttpContext.User.Identity!.Name;
         if (string.IsNullOrEmpty(id))
         {
-            var id2 = Guid.NewGuid().ToString()[..8];
-            await _userManager.LoginAsync(id2);
+            var newId = Guid.NewGuid().ToString()[..8];
+            await _userManager.LoginAsync(newId);
         }
 
         if (!string.IsNullOrEmpty(id) && _userManager.FindUserById(id) is null)
         {
             await _userManager.LogoutAsync(id);
-            var id2 = Guid.NewGuid().ToString()[..8];
-            await _userManager.LoginAsync(id2);
+            var newId = Guid.NewGuid().ToString()[..8];
+            await _userManager.LoginAsync(newId);
         }
 
         return Ok();
     }
 
     [HttpGet, Route("Profile"), Authorize]
-    public async Task<IActionResult> Profile()
+    public IActionResult Profile()
     {
-        var name = _userManager.FindUserById(HttpContext.User.Identity.Name)?.Name;
+        var name = _userManager.FindUserById(HttpContext.User.Identity!.Name!)!.Name;
         return Ok(new { Name = name });
     }
 
     [HttpGet, Route("Rename/{name}"), Authorize]
-    public async Task<IActionResult> Rename(string name)
+    public IActionResult Rename(string name)
     {
-        _userManager.RenameUserById(HttpContext.User.Identity.Name, name);
+        _userManager.RenameUserById(HttpContext.User.Identity!.Name!, name);
         return Ok();
     }
 
-    [HttpGet, Route("SearchUser/{keyword}"), Authorize]
-    public async Task<IActionResult> SearchUser(string keyword)
+    [HttpGet, Route("{apiName}/SearchUser/{keyword}"), Authorize]
+    public async Task<IActionResult> SearchUser(string apiName, string keyword)
     {
-        return Ok(await _neteaseApi.SearchNeteaseUsersAsync(keyword));
+        if (string.IsNullOrEmpty(apiName)) return BadRequest("Specify an api provider.");
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider ${apiName}.");
+        return Ok(await ma!.SearchUserAsync(keyword));
     }
 
-    [HttpGet, Route("bind/{uid}"), Authorize]
-    public async Task<IActionResult> Bind(string uid)
+    [HttpGet, Route("{apiName}/bind/{identifier}"), Authorize]
+    public IActionResult Bind(string apiName, string identifier)
     {
-        _userManager.UserBindNeteaseUid(HttpContext.User.Identity.Name, uid);
+        if (!_musicApis.TryGetMusicApi(apiName, out _))
+            return BadRequest($"Unknown api provider ${apiName}.");
+        _userManager.BindMusicApiService(HttpContext.User.Identity!.Name!, apiName, identifier);
         return Ok();
     }
 
-    [HttpGet, Route("myplaylists"), Authorize]
-    public async Task<IActionResult> MyPlaylists()
+    [HttpGet, Route("{apiName}/myplaylists"), Authorize]
+    public async Task<IActionResult> MyPlaylists(string apiName)
     {
-        if (_userManager.FindUserById(HttpContext.User.Identity.Name) is null ||
-            string.IsNullOrEmpty(_userManager.FindUserById(HttpContext.User.Identity.Name).NeteaseUid))
-        {
-            return BadRequest("You should bind your Netease Account first.");
-        }
+        var user = _userManager.FindUserById(HttpContext.User.Identity!.Name!)!;
+        if (!user.TryGetMusicApiServiceBinding(apiName, out var identifier))
+            return BadRequest($"You should bind your {apiName} Account first.");
 
-        var playlists =
-            await _neteaseApi.GetUserPlaylistAsync(_userManager.FindUserById(HttpContext.User.Identity.Name)
-                .NeteaseUid);
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider ${apiName}.");
+
+        var playlists = await ma!.GetUserPlayListAsync(identifier!);
+
         return Ok(playlists);
     }
 
-    [HttpGet, Route("playlistmusics/{id}"), Authorize]
-    public async Task<IActionResult> PlaylistMusics(string id, [FromQuery] int page = 0)
+    [HttpGet, Route("{api}/playlistmusics/{id}"), Authorize]
+    public async Task<IActionResult> PlaylistMusics(string api, string id, [FromQuery] int page = 0)
     {
-        var musics = await _neteaseApi.GetMusicsByPlaylistAsync(id, page * 10);
+        if (!_musicApis.TryGetMusicApi(api, out var ma))
+            return BadRequest($"Unknown api provider ${api}.");
+        var musics = await ma!.GetMusicsByPlaylistAsync(id, page * 10);
         return Ok(musics);
     }
 }

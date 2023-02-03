@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MusicApiContract\MusicApiContract.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="QRCoder" Version="1.4.3" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+      <PackageReference Include="ZXing.Net.Bindings.ImageSharp.V2" Version="0.16.14" />
+    </ItemGroup>
+
+</Project>

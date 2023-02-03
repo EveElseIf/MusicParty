@@ -1,162 +1,150 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using MusicParty.Models;
+using MusicParty.MusicApi;
 
 namespace MusicParty.Hub;
 
 [Authorize]
 public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 {
-    private static (PlayableMusic, string enqueuerId)? NowPlaying { get; set; }
-    private static Queue<(Music, string enqueuerId)> MusicQueue { get; } = new();
     private static HashSet<string> OnlineUsers { get; } = new();
+    private static List<string> DuplicatedConnectionIds { get; } = new();
     private static Queue<(string name, string content)> Last5Chat { get; } = new();
-    private static DateTime _time = default;
-    private static bool _loopStarted = false;
-    private readonly NeteaseApi _neteaseApi;
-    private readonly IHubContext<MusicHub> _context;
+    private readonly IEnumerable<IMusicApi> _musicApis;
+    private readonly MusicBroadcaster _musicBroadcaster;
     private readonly UserManager _userManager;
     private readonly ILogger<MusicHub> _logger;
 
-    public MusicHub(NeteaseApi neteaseApi, IHubContext<MusicHub> context, UserManager userManager,
+    public MusicHub(IEnumerable<IMusicApi> musicApis, MusicBroadcaster musicBroadcaster,
+        UserManager userManager,
         ILogger<MusicHub> logger)
     {
-        _neteaseApi = neteaseApi;
-        _context = context;
+        _musicApis = musicApis;
+        _musicBroadcaster = musicBroadcaster;
         _userManager = userManager;
         _logger = logger;
-        if (!_loopStarted)
-        {
-            _loopStarted = true;
-            _ = Loop();
-        }
     }
 
     public override async Task OnConnectedAsync()
     {
-        if (NowPlaying is not null)
+        if (OnlineUsers.Contains(Context.User!.Identity!.Name!)) // don't allow login twice
         {
-            await SetPlaying2(Clients.Caller, NowPlaying?.Item1,
-                _userManager.FindUserById(NowPlaying?.enqueuerId).Name, (int)(DateTime.Now - _time).TotalSeconds);
+            DuplicatedConnectionIds.Add(Context.ConnectionId);
+            await Clients.Caller.SendAsync("Abort", "You have already logged in.");
+            Context.Abort();
+            return;
         }
 
-        await Clients.Caller.SendAsync("QueueUpdated");
-
-        OnlineUsers.Add(Context.User.Identity.Name);
-        await Clients.All.SendAsync("OnlineUsersUpdated");
-
+        OnlineUsers.Add(Context.User.Identity.Name!);
+        await OnlineUserLogin(Context.User.Identity.Name!);
         if (Last5Chat.Count > 0)
         {
             foreach (var chat in Last5Chat)
             {
-                await Clients.Caller.SendAsync("ChatUpdated", new { Name = chat.name, Content = chat.content });
+                await NewChat(chat.name, chat.content);
             }
+        }
+
+        if (_musicBroadcaster.NowPlaying is not null)
+        {
+            var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+            await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
+                (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
         }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        OnlineUsers.RemoveWhere(x => x == Context.User.Identity.Name);
-        await Clients.All.SendAsync("OnlineUsersUpdated");
-    }
-
-    private async Task Loop()
-    {
-        while (true)
+        if (DuplicatedConnectionIds.Contains(Context.ConnectionId))
         {
-            if (NowPlaying is null)
-            {
-                if (MusicQueue.TryDequeue(out var music))
-                {
-                    try
-                    {
-                        await _context.Clients.All.SendAsync("QueueUpdated");
-                        // start playing
-                        NowPlaying = (await _neteaseApi.GetPlayableMusicAsync(music.Item1), music.enqueuerId);
-                        _time = DateTime.Now;
-                        await SetPlaying(NowPlaying?.Item1,
-                            _userManager.FindUserById(NowPlaying?.enqueuerId).Name, 0);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, null);
-                    }
-                }
-            }
-            else
-            {
-                if ((DateTime.Now - _time).TotalMilliseconds >= NowPlaying?.Item1.Length) // playing is over
-                {
-                    NowPlaying = null;
-                }
-            }
-
-            await Task.Delay(1000);
+            DuplicatedConnectionIds.Remove(Context.ConnectionId);
+            return;
         }
+
+        OnlineUsers.Remove(Context.User!.Identity!.Name!);
+        await OnlineUserLogout(Context.User.Identity.Name!);
     }
 
-    // Remote invokable
-    public async Task AddMusicToQueue(string id)
-    {
-        var music = await _neteaseApi.GetMusicAsync(id);
-        MusicQueue.Enqueue((music, Context.User.Identity.Name));
-        await Clients.All.SendAsync("QueueUpdated");
-    }
+    #region Remote invokable
 
-    public record MusicEnqueueOrder(Music Music, string Enqueuer);
-
-    public IEnumerable<MusicEnqueueOrder> GetMusicQueue()
+    public async Task EnqueueMusic(string id, string apiName)
     {
-        return MusicQueue.Select(x => new MusicEnqueueOrder(x.Item1, _userManager.FindUserById(x.enqueuerId).Name))
-            .ToList();
-    }
-
-    public void NextSong()
-    {
-        NowPlaying = null;
-    }
-
-    public async Task Rename(string newName)
-    {
-        _userManager.RenameUserById(Context.User.Identity.Name, newName);
-        await Clients.All.SendAsync("OnlineUsersUpdated");
-    }
-
-    public IEnumerable<string> GetOnlineUsers()
-    {
-        return OnlineUsers.Select(x => _userManager.FindUserById(x)?.Name).ToList();
-    }
-
-    public async Task ChatSay(string content)
-    {
-        var model = new { Name = _userManager.FindUserById(Context.User.Identity.Name).Name, Content = content };
-        while (Last5Chat.Count >= 5) Last5Chat.Dequeue();
-        Last5Chat.Enqueue((model.Name, model.Content));
-        await Clients.All.SendAsync("ChatUpdated", model);
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            throw new HubException($"Unknown api provider ${apiName}.");
+        try
+        {
+            var music = await ma!.GetMusicByIdAsync(id);
+            await _musicBroadcaster.EnqueueMusic(music, apiName, Context.User!.Identity!.Name!);
+        }
+        catch (Exception ex)
+        {
+            throw new HubException($"Failed to enqueue music, id: {id}", ex);
+        }
     }
 
     public async Task RequestSetNowPlaying()
     {
-        if (NowPlaying is not null)
-        {
-            await SetPlaying2(Clients.Caller, NowPlaying?.Item1, _userManager.FindUserById(NowPlaying?.enqueuerId).Name,
-                (int)(DateTime.Now - _time).TotalSeconds);
-        }
+        if (_musicBroadcaster.NowPlaying is null) return;
+        var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+        await SetNowPlaying(Clients.All, music, enqueuerId,
+            (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
     }
 
-    public async Task RequestQueueUpdate()
-    {
-        await Clients.All.SendAsync("QueueUpdated");
-    }
-    // End remote invokable
+    public record MusicEnqueueOrder(Music Music, string EnqueuerName);
 
-    public async Task SetPlaying(PlayableMusic music, string enqueuer, int playedTime)
+    public IEnumerable<MusicEnqueueOrder> GetMusicQueue()
     {
-        await _context.Clients.All.SendAsync(nameof(SetPlaying), music, enqueuer, playedTime);
+        return _musicBroadcaster.GetQueue().Select(x => new MusicEnqueueOrder(x.music, x.enqueuerName)).ToList();
     }
 
-    public async Task SetPlaying2(IClientProxy target, PlayableMusic music, string enqueuer, int playedTime)
+    public void NextSong()
     {
-        await target.SendAsync(nameof(SetPlaying), music, enqueuer, playedTime);
+        _musicBroadcaster.NextSong();
+    }
+
+    public async Task Rename(string newName)
+    {
+        _userManager.RenameUserById(Context.User!.Identity!.Name!, newName);
+        await OnlineUserRename(Context.User.Identity.Name!);
+    }
+
+    public IEnumerable<string> GetOnlineUsers()
+    {
+        return OnlineUsers.Select(x => _userManager.FindUserById(x)!.Name).ToList();
+    }
+
+    public async Task ChatSay(string content)
+    {
+        var name = _userManager.FindUserById(Context.User!.Identity!.Name!)!.Name;
+        while (Last5Chat.Count >= 5) Last5Chat.Dequeue();
+        Last5Chat.Enqueue((name, content));
+        await NewChat(name, content);
+    }
+
+    #endregion
+
+    private async Task SetNowPlaying(IClientProxy target, PlayableMusic music, string enqueuerName, int playedTime)
+    {
+        await target.SendAsync(nameof(SetNowPlaying), music, enqueuerName, playedTime);
+    }
+
+    private async Task OnlineUserLogin(string id)
+    {
+        await Clients.All.SendAsync(nameof(OnlineUserLogin), id, _userManager.FindUserById(id)!.Name);
+    }
+
+    private async Task OnlineUserLogout(string id)
+    {
+        await Clients.All.SendAsync(nameof(OnlineUserLogout), id, _userManager.FindUserById(id)!.Name);
+    }
+
+    private async Task OnlineUserRename(string id)
+    {
+        await Clients.All.SendAsync(nameof(OnlineUserRename), id, _userManager.FindUserById(id)!.Name);
+    }
+
+    private async Task NewChat(string name, string content)
+    {
+        await Clients.All.SendAsync(nameof(NewChat), name, content);
     }
 }

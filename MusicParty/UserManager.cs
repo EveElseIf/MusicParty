@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
-using MusicParty.Models;
 
 namespace MusicParty;
 
@@ -16,17 +15,17 @@ public class UserManager
 
     private void CreateUser(string id, string name)
     {
-        _users.Add(new User(id, id, null));
+        _users.Add(new User(id, name, new()));
     }
 
     public async Task LoginAsync(string id)
     {
         var claims = new List<Claim>()
         {
-            new Claim(ClaimTypes.Name, id)
+            new(ClaimTypes.Name, id)
         };
         var user = new ClaimsPrincipal(new ClaimsIdentity(claims, "any"));
-        await _accessor.HttpContext.SignInAsync("Cookies", user, new AuthenticationProperties()
+        await _accessor.HttpContext!.SignInAsync("Cookies", user, new AuthenticationProperties()
         {
             ExpiresUtc = DateTimeOffset.MaxValue
         });
@@ -35,7 +34,7 @@ public class UserManager
 
     public async Task LogoutAsync(string id)
     {
-        await _accessor.HttpContext.SignOutAsync("Cookies");
+        await _accessor.HttpContext!.SignOutAsync("Cookies");
         _users.RemoveAll(x => x.Id == id);
     }
 
@@ -46,15 +45,16 @@ public class UserManager
 
     public void RenameUserById(string id, string newName)
     {
-        var user = _users.Find(x => x.Id == id);
+        var user = FindUserById(id);
+        if (user is null) throw new ArgumentException($"No user whose id is {id}.", nameof(id));
         _users.Remove(user);
         _users.Add(user with { Name = newName });
     }
 
-    public void UserBindNeteaseUid(string id, string uid)
+    public void BindMusicApiService(string id, string apiName, string identifier)
     {
-        var user = _users.Find(x => x.Id == id);
-        _users.Remove(user);
-        _users.Add(user with { NeteaseUid = uid });
+        var user = FindUserById(id);
+        if (user is null) throw new ArgumentException($"No user whose id is {id}.", nameof(id));
+        user.MusicApiServiceBindings.Add(apiName, identifier);
     }
 }

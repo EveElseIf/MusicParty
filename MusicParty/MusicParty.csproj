@@ -16,4 +16,9 @@
         <PackageReference Include="ZXing.Net.Bindings.ImageSharp.V2" Version="0.16.14" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MusicApiContract\MusicApiContract.csproj" />
+      <ProjectReference Include="..\NeteaseCloudMusicApi\NeteaseCloudMusicApi.csproj" />
+    </ItemGroup>
+
 </Project>
