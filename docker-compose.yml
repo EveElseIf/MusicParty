@@ -1,7 +1,8 @@
 version: "3.9"
 services:
   neteaseapi:
-    build: netease-api
+    build:
+      dockerfile: Dockerfile.neteaseapi
     expose:
       - 3000
     healthcheck:
@@ -14,13 +15,16 @@ services:
       timeout: 5s
       retries: 3
   frontend:
-    build: music-party
+    build:
+      dockerfile: Dockerfile.frontend
     expose:
       - 3000
   backend:
-    build: MusicParty
+    build:
+      dockerfile: Dockerfile.backend
     environment:
-      NeteaseApiUrl: "http://neteaseapi:3000"
+      MusicApi:NeteaseCloudMusic:ApiServerUrl: "http://neteaseapi:3000"
+      MusicApi:NeteaseCloudMusic:PhoneNo: ""
       FrontEndUrl: "http://frontend:3000"
     depends_on:
       neteaseapi:
