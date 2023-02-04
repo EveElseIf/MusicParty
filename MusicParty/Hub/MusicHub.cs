@@ -86,7 +86,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     {
         if (_musicBroadcaster.NowPlaying is null) return;
         var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
-        await SetNowPlaying(Clients.All, music, enqueuerId,
+        await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
             (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
     }
 
