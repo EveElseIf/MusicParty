@@ -23,7 +23,8 @@ services:
     build:
       dockerfile: Dockerfile.backend
     environment:
-      NeteaseApiUrl: "http://neteaseapi:3000"
+      MusicApi:NeteaseCloudMusic:ApiServerUrl: "http://neteaseapi:3000"
+      MusicApi:NeteaseCloudMusic:PhoneNo: ""
       FrontEndUrl: "http://frontend:3000"
     depends_on:
       neteaseapi:
