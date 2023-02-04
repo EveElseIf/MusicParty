@@ -20,6 +20,10 @@ export async function bindAccount(identifier: string, apiName: string) {
     return fetch(`/api/${apiName}/bind/${identifier}`);
 }
 
+export async function getBindInfo() {
+    return (await fetch(`/api/bindinfo`)).json();
+}
+
 export async function getMyPlaylist(apiName: string): Promise<Playlist[]> {
     const resp = await fetch(`/api/${apiName}/myplaylists`);
     const j = await resp.json();

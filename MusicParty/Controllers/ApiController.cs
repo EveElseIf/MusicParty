@@ -53,6 +53,13 @@ public class ApiController : ControllerBase
         return Ok();
     }
 
+    [HttpGet, Route("bindinfo"), Authorize]
+    public IActionResult BindInfo()
+    {
+        var user = _userManager.FindUserById(HttpContext.User.Identity!.Name!)!;
+        return Ok(user.MusicApiServiceBindings.ToArray());
+    }
+
     [HttpGet, Route("{apiName}/myplaylists"), Authorize]
     public async Task<IActionResult> MyPlaylists(string apiName)
     {

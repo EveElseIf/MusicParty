@@ -10,6 +10,7 @@ export class Connection {
         onlineUserRename: (id: string, newName: string) => void,
         newChat: (name: string, content: string) => void,
         globalMessage: (content: string) => void,
+        abort: (msg: string) => void
     ) {
         this._conn = new sr.HubConnectionBuilder().withUrl(url).build();
         this._conn.on("SetNowPlaying", setNowPlaying);
@@ -20,6 +21,7 @@ export class Connection {
         this._conn.on("OnlineUserRename", onlineUserRename);
         this._conn.on("NewChat", newChat);
         this._conn.on("GlobalMessage", globalMessage);
+        this._conn.on("Abort", abort);
     }
     public async start(): Promise<any> {
         if (this._conn.state === sr.HubConnectionState.Disconnected) {

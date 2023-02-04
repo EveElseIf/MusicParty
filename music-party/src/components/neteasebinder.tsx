@@ -13,7 +13,7 @@ export const NeteaseBinder = (props: {}) => {
 
     return (
         <>
-            <Button ref={btnRef} colorScheme='teal' onClick={onOpen}>
+            <Button ref={btnRef} colorScheme='pink' onClick={onOpen}>
                 Bind Netease Account
             </Button>
             <Drawer

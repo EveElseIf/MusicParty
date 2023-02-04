@@ -8,32 +8,42 @@ export const MyPlaylist = (props: { apis: string[], enqueue: (id: string, apiNam
     const [canshow, setCanshow] = useState(false);
     const [playlists, setPlaylists] = useState<api.Playlist[]>([]);
     const [needBind, setNeedBind] = useState(false);
-    const [apiName, setApiName] = useState("NeteaseCloudMusic");
+    const [apiName, setApiName] = useState("");
+    const [playlistCache, setPlaylistCache] = useState<Map<string, api.Playlist[]>>(new Map<string, api.Playlist[]>());
     const t = useToast();
 
     useEffect(() => {
-        setApiName(props.apis[0]);
-    }, [props.apis])
-
-    useEffect(() => {
-        api.getMyPlaylist(apiName).then(resp => {
-            setPlaylists(resp);
-            setCanshow(true);
-        }).catch(err => {
-            if (err === "NeedBind") {
+        api.getBindInfo().then((info: { key: string, value: string }[]) => {
+            if (info.length > 0) {
+                const defaultApi = info[0].key;
+                setApiName(defaultApi);
+            } else {
                 setNeedBind(true);
                 setCanshow(true);
             }
-            else
-                toastError(t, err);
         });
-    }, []);
+    }, [props.apis]);
+
+    useEffect(() => {
+        if (!apiName) return;
+        if (playlistCache.has(apiName)) {
+            setPlaylists(playlistCache.get(apiName)!);
+        } else {
+            api.getMyPlaylist(apiName).then(resp => {
+                setPlaylists(resp);
+                setCanshow(true);
+                setPlaylistCache(c => c.set(apiName, resp));
+            }).catch(err => {
+                toastError(t, err);
+            });
+        }
+    }, [apiName]);
 
     return (<Stack>
         {canshow ?
             (
                 needBind ? <Text>
-                    Please bind your Netease account first!
+                    Please bind your music service account first!
                     After that, refresh this page.
                 </Text>
                     : <>
@@ -43,9 +53,9 @@ export const MyPlaylist = (props: { apis: string[], enqueue: (id: string, apiNam
                             </Text>
                             <Select ml={2} flex={1} onChange={e => {
                                 setApiName(e.target.value);
-                            }} >
+                            }} defaultValue={apiName}>
                                 {props.apis.map(a => {
-                                    return <option key={a} value={a}>
+                                    return <option key={a}>
                                         {a}
                                     </option>;
                                 })}

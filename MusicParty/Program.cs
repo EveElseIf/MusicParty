@@ -3,6 +3,7 @@ using MusicParty;
 using MusicParty.Hub;
 using MusicParty.MusicApi;
 using MusicParty.MusicApi.NeteaseCloudMusic;
+using MusicParty.MusicApi.QQMusic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,16 @@ if (bool.Parse(builder.Configuration["MusicApi:NeteaseCloudMusic:Enabled"]))
         bool.Parse(builder.Configuration["MusicApi:NeteaseCloudMusic:SMSLogin"])
     );
     api.Login();
+    musicApiList.Add(api);
+}
+
+if (bool.Parse(builder.Configuration["MusicApi:QQMusic:Enabled"]))
+{
+    var api = new QQMusicApi(
+        builder.Configuration["MusicApi:QQMusic:ApiServerUrl"],
+        builder.Configuration["MusicApi:QQMusic:QQNo"],
+        builder.Configuration["MusicApi:QQMusic:Cookie"]
+    );
     musicApiList.Add(api);
 }
 

@@ -168,7 +168,7 @@ public class NeteaseCloudMusicApi : IMusicApi
             throw new Exception($"Unable to get playable music, id: {music.Id}");
         var url = (string)j["data"]![0]!["url"]!;
         var length = (long)j["data"]![0]!["time"]!;
-        return new PlayableMusic(music.Id, music.Name, music.Artists, url.Replace("http", "https"), length);
+        return new PlayableMusic(music) { Url = url.Replace("http", "https"), Length = length };
     }
 
     public async Task<Music> GetMusicByIdAsync(string id)
@@ -217,7 +217,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/playlist/track/all?id={id}&limit=10&offset={offset}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
-            throw new Exception($"Unable to get playlist musics, playlist id: {id}");
+            throw new Exception($"Unable to get playlist musics, playlist id: {id}.");
 
         return (from b in j["songs"]!.AsArray()
             let id2 = b["id"].GetValue<long>().ToString()

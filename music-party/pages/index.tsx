@@ -8,6 +8,7 @@ import { NeteaseBinder } from '../src/components/neteasebinder';
 import { MyPlaylist } from '../src/components/myplaylist';
 import { toastEnqueueOk, toastError } from '../src/utils/toast';
 import { MusicSelector } from '../src/components/musicselector';
+import { QQMusicBinder } from '../src/components/qqmusicbinder';
 
 export default function Home() {
   const [src, setSrc] = useState("");
@@ -57,6 +58,10 @@ export default function Home() {
         async (content: string) => {
           // todo
           console.log(content);
+        },
+        async (msg: string) => {
+          console.error(msg);
+          toastError(t, msg);
         }
       );
       conn.current.start().then(async () => {
@@ -135,6 +140,7 @@ export default function Home() {
                   </>)}
                 </Popover>
                 <NeteaseBinder />
+                <QQMusicBinder />
               </Stack>
             </CardBody>
           </Card>

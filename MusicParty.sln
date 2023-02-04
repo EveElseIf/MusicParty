@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicApiContract", "MusicAp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeteaseCloudMusicApi", "NeteaseCloudMusicApi\NeteaseCloudMusicApi.csproj", "{561719E3-7BA9-4C62-A3D9-5019FF8CCAD2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QQMusicApi", "QQMusicApi\QQMusicApi.csproj", "{75C5F551-053C-4F2B-9403-81D591939EB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,9 +28,14 @@ Global
 		{561719E3-7BA9-4C62-A3D9-5019FF8CCAD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{561719E3-7BA9-4C62-A3D9-5019FF8CCAD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{561719E3-7BA9-4C62-A3D9-5019FF8CCAD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75C5F551-053C-4F2B-9403-81D591939EB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75C5F551-053C-4F2B-9403-81D591939EB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75C5F551-053C-4F2B-9403-81D591939EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75C5F551-053C-4F2B-9403-81D591939EB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1D0DCF11-8482-40F5-B380-764028EA3844} = {4BBC3A7A-68E8-4FF1-ADAD-7CD3B984893C}
 		{561719E3-7BA9-4C62-A3D9-5019FF8CCAD2} = {4BBC3A7A-68E8-4FF1-ADAD-7CD3B984893C}
+		{75C5F551-053C-4F2B-9403-81D591939EB5} = {4BBC3A7A-68E8-4FF1-ADAD-7CD3B984893C}
 	EndGlobalSection
 EndGlobal
