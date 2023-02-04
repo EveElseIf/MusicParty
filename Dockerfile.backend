@@ -2,6 +2,7 @@ FROM bitnami/dotnet-sdk:6
 COPY ./MusicParty /src/MusicParty
 COPY ./MusicApiContract /src/MusicApiContract
 COPY ./NeteaseCloudMusicApi /src/NeteaseCloudMusicApi
+COPY ./QQMusicApi /src/QQMusicApi
 WORKDIR /src
 RUN dotnet build -c release -o /build MusicParty
 WORKDIR /build
