@@ -6,7 +6,7 @@ namespace MusicParty;
 
 public class MusicBroadcaster
 {
-    public (PlayableMusic music, string enqueuerId)? NowPlaying { get; set; }
+    public (PlayableMusic music, string enqueuerId)? NowPlaying { get; private set; }
     private Queue<(Music music, string service, string enqueuerId)> MusicQueue { get; } = new();
     public DateTime NowPlayingStartedTime { get; private set; }
     private readonly IEnumerable<IMusicApi> _apis;

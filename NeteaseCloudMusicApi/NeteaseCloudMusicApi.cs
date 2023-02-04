@@ -22,7 +22,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         _smsLogin = smsLogin;
     }
 
-    public string ServiceName => "Netease Cloud Music";
+    public string ServiceName => "NeteaseCloudMusic";
 
     public void Login()
     {

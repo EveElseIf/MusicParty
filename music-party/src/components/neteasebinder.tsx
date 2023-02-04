@@ -1,12 +1,12 @@
 import { Text, Button, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, Input, List, ListItem, useDisclosure, useToast } from "@chakra-ui/react"
 import React, { useState } from "react"
-import { bindNeteaseAccount, NeteaseUser, searchNeteaseUsers } from "../api/api";
+import { bindAccount, MusicServiceUser, searchUsers } from "../api/api";
 
 export const NeteaseBinder = (props: {}) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const btnRef = React.useRef<any>();
 
-    const [users, setUsers] = useState<NeteaseUser[]>([]);
+    const [users, setUsers] = useState<MusicServiceUser[]>([]);
     const [keyword, setKeyword] = useState("");
 
     const t = useToast();
@@ -29,20 +29,20 @@ export const NeteaseBinder = (props: {}) => {
                     <DrawerBody>
                         <Flex>
                             <Input flex={1} value={keyword} onChange={e => setKeyword(e.target.value)} placeholder='Your Netease name' />
-                            <Button onClick={async () => {
+                            <Button ml={2} onClick={async () => {
                                 if (keyword === "") return;
-                                const users = await searchNeteaseUsers(keyword);
+                                const users = await searchUsers(keyword, "NeteaseCloudMusic");
                                 setUsers(users);
                             }}>Search</Button>
                         </Flex>
                         <List>
                             {users.map((user => {
-                                return (<ListItem key={user.uid}>
+                                return (<ListItem key={user.identifier}>
                                     <Flex padding={4}>
                                         <Text flex={1} >{user.name}</Text>
                                         <Button onClick={async () => {
                                             try {
-                                                await bindNeteaseAccount(user.uid);
+                                                await bindAccount(user.identifier, "NeteaseCloudMusic");
                                                 t({
                                                     title: "Bind success!",
                                                     status: "success",

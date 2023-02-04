@@ -1,3 +1,3 @@
 namespace MusicParty.MusicApi;
 
-public record PlayList(string Identifier, string Name);
+public record PlayList(string Id, string Name);

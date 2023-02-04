@@ -4,25 +4,35 @@ export async function getProfile(): Promise<User> {
     return { name: j["name"] };
 }
 
-export async function searchNeteaseUsers(keyword: string): Promise<NeteaseUser[]> {
-    const resp = await fetch(`/api/searchuser/${keyword}`);
+export async function getMusicApis(): Promise<string[]> {
+    const resp = await fetch("/api/musicservices");
     const j = await resp.json();
     return j;
 }
 
-export async function bindNeteaseAccount(uid: string) {
-    return fetch(`/api/bind/${uid}`);
-}
-
-export async function getMyPlaylist(): Promise<Playlist[]> {
-    const resp = await fetch("/api/myplaylists");
-    if (resp.status === 400) throw "400";
+export async function searchUsers(keyword: string, apiName: string): Promise<MusicServiceUser[]> {
+    const resp = await fetch(`/api/${apiName}/searchuser/${keyword}`);
     const j = await resp.json();
     return j;
 }
 
-export async function getMusicsByPlaylist(id: string, page: number): Promise<Music[]> {
-    const resp = await fetch(`/api/playlistmusics/${id}?page=${page}`);
+export async function bindAccount(identifier: string, apiName: string) {
+    return fetch(`/api/${apiName}/bind/${identifier}`);
+}
+
+export async function getMyPlaylist(apiName: string): Promise<Playlist[]> {
+    const resp = await fetch(`/api/${apiName}/myplaylists`);
+    const j = await resp.json();
+    if (!resp.ok) {
+        const err = j as { code: number, message: string };
+        if (err.code === 1) throw "UnknownApi";
+        if (err.code === 2) throw "NeedBind";
+    }
+    return j;
+}
+
+export async function getMusicsByPlaylist(id: string, page: number, apiName: string): Promise<Music[]> {
+    const resp = await fetch(`/api/${apiName}/playlistmusics/${id}?page=${page}`);
     const j = await resp.json();
     return j;
 }
@@ -31,8 +41,8 @@ export interface User {
     name: string;
 }
 
-export interface NeteaseUser {
-    uid: string,
+export interface MusicServiceUser {
+    identifier: string,
     name: string
 }
 
@@ -44,5 +54,5 @@ export interface Playlist {
 export interface Music {
     id: string,
     name: string,
-    artist: string
+    artists: string[]
 }

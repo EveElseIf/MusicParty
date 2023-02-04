@@ -36,12 +36,12 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         }
 
         OnlineUsers.Add(Context.User.Identity.Name!);
-        await OnlineUserLogin(Context.User.Identity.Name!);
+        await OnlineUserLogin(Clients.Others, Context.User.Identity.Name!);
         if (Last5Chat.Count > 0)
         {
             foreach (var chat in Last5Chat)
             {
-                await NewChat(chat.name, chat.content);
+                await NewChat(Clients.Caller, chat.name, chat.content);
             }
         }
 
@@ -70,7 +70,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     public async Task EnqueueMusic(string id, string apiName)
     {
         if (!_musicApis.TryGetMusicApi(apiName, out var ma))
-            throw new HubException($"Unknown api provider ${apiName}.");
+            throw new HubException($"Unknown api provider {apiName}.");
         try
         {
             var music = await ma!.GetMusicByIdAsync(id);
@@ -108,9 +108,11 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await OnlineUserRename(Context.User.Identity.Name!);
     }
 
-    public IEnumerable<string> GetOnlineUsers()
+    public record User(string Id, string Name);
+
+    public IEnumerable<User> GetOnlineUsers()
     {
-        return OnlineUsers.Select(x => _userManager.FindUserById(x)!.Name).ToList();
+        return OnlineUsers.Select(x => new User(x, _userManager.FindUserById(x)!.Name)).ToList();
     }
 
     public async Task ChatSay(string content)
@@ -118,7 +120,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         var name = _userManager.FindUserById(Context.User!.Identity!.Name!)!.Name;
         while (Last5Chat.Count >= 5) Last5Chat.Dequeue();
         Last5Chat.Enqueue((name, content));
-        await NewChat(name, content);
+        await NewChat(Clients.All, name, content);
     }
 
     #endregion
@@ -128,14 +130,14 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await target.SendAsync(nameof(SetNowPlaying), music, enqueuerName, playedTime);
     }
 
-    private async Task OnlineUserLogin(string id)
+    private async Task OnlineUserLogin(IClientProxy target, string id)
     {
-        await Clients.All.SendAsync(nameof(OnlineUserLogin), id, _userManager.FindUserById(id)!.Name);
+        await target.SendAsync(nameof(OnlineUserLogin), id, _userManager.FindUserById(id)!.Name);
     }
 
     private async Task OnlineUserLogout(string id)
     {
-        await Clients.All.SendAsync(nameof(OnlineUserLogout), id, _userManager.FindUserById(id)!.Name);
+        await Clients.All.SendAsync(nameof(OnlineUserLogout), id);
     }
 
     private async Task OnlineUserRename(string id)
@@ -143,8 +145,8 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await Clients.All.SendAsync(nameof(OnlineUserRename), id, _userManager.FindUserById(id)!.Name);
     }
 
-    private async Task NewChat(string name, string content)
+    private async Task NewChat(IClientProxy target, string name, string content)
     {
-        await Clients.All.SendAsync(nameof(NewChat), name, content);
+        await target.SendAsync(nameof(NewChat), name, content);
     }
 }

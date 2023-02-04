@@ -1,62 +1,94 @@
 import Head from 'next/head'
 import React, { useEffect, useRef, useState } from 'react'
-import { connection, music } from '../src/api/musichub'
-import { Text, Button, Card, CardBody, CardHeader, Grid, GridItem, Heading, Input, ListItem, OrderedList, Tab, TabList, TabPanel, TabPanels, Tabs, useToast, Stack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Portal, useDisclosure, UnorderedList, Flex, Highlight, Box } from '@chakra-ui/react'
+import { Connection, music } from '../src/api/musichub'
+import { Text, Button, Card, CardBody, CardHeader, Grid, GridItem, Heading, Input, ListItem, OrderedList, Tab, TabList, TabPanel, TabPanels, Tabs, useToast, Stack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Portal, UnorderedList, Flex, Highlight, Box } from '@chakra-ui/react'
 import { MusicPlayer } from '../src/components/musicplayer';
-import { getProfile } from '../src/api/api';
+import { getMusicApis, getProfile } from '../src/api/api';
 import { NeteaseBinder } from '../src/components/neteasebinder';
 import { MyPlaylist } from '../src/components/myplaylist';
 import { toastEnqueueOk, toastError } from '../src/utils/toast';
+import { MusicSelector } from '../src/components/musicselector';
 
 export default function Home() {
-  const [id, setId] = useState("");
   const [src, setSrc] = useState("");
   const [playtime, setPlaytime] = useState(0);
   const [nowPlaying, setNowPlaying] = useState<{ music: music, enqueuer: string }>();
-  const [queue, setQueue] = useState<{ music: music, enqueuer: string }[]>([]);
+  const [queue, setQueue] = useState<{ music: music, enqueuerName: string }[]>([]);
   const [userName, setUserName] = useState("");
   const [newName, setNewName] = useState("");
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<{ id: string, name: string }[]>([]);
   const [inited, setInited] = useState(false);
   const [chatContent, setChatContent] = useState<{ name: string, content: string }[]>([]);
   const [chatToSend, setChatToSend] = useState("");
+  const [apis, setApis] = useState<string[]>([]);
   const t = useToast();
 
-  const conn = useRef<connection>();
+  const conn = useRef<Connection>();
   useEffect(() => {
     if (!conn.current) {
-      fetch("/api/new").then(() => {
-        conn.current = new connection(`${window.location.origin}/music`,
-          async (music: music, enqueuer: string, time: number) => {
-            console.log(music);
-            setSrc(music.url);
-            setNowPlaying({ music, enqueuer });
-            setPlaytime(time);
-          }, async () => {
-            const q = await conn.current!.getMusicQueue();
-            console.log(q);
-            setQueue(q);
-          }, async () => {
-            const users = await conn.current!.getOnlineUsers();
-            setOnlineUsers(users);
-          }, (({ name, content }) => {
-            setChatContent(c => c.concat({ name, content }));
-          }));
-        conn.current.start();
+      conn.current = new Connection(
+        `${window.location.origin}/music`,
+        async (music: music, enqueuerName: string, playedTime: number) => {
+          console.log(music);
+          setSrc(music.url);
+          setNowPlaying({ music, enqueuer: enqueuerName });
+          setPlaytime(playedTime);
+        },
+        async (music: music, enqueuerName: string) => {
+          setQueue(q => q.concat({ music, enqueuerName: enqueuerName }));
+        },
+        async () => {
+          setQueue(q => q.slice(1));
+        },
+        async (id: string, name: string) => {
+          setOnlineUsers(u => u.concat({ id, name }));
+        },
+        async (id: string) => {
+          setOnlineUsers(u => u.filter(x => x.id !== id));
+        },
+        async (id: string, newName: string) => {
+          setOnlineUsers(u =>
+            u.map(x => x.id === id ? { id, name: newName } : x)
+          );
+        },
+        async (name: string, content: string) => {
+          setChatContent(c => c.concat({ name, content }));
+        },
+        async (content: string) => {
+          // todo
+          console.log(content);
+        }
+      );
+      conn.current.start().then(async () => {
+        try {
+          const queue = await conn.current!.getMusicQueue();
+          setQueue(queue);
+          const users = await conn.current!.getOnlineUsers();
+          setOnlineUsers(users);
+        } catch (err: any) {
+          toastError(t, err);
+        }
+      }).catch(e => {
+        console.error(e);
+        toastError(t, "Please refresh this page to retry.");
+      });
 
-        getProfile().then((u) => {
-          setUserName(u.name);
-        }).catch((e) => {
-          console.log(e);
-          toastError(t, "Please refresh this page to retry.")
-        });
+      getProfile().then((u) => {
+        setUserName(u.name);
+      }).catch((e) => {
+        console.error(e);
+        toastError(t, "Please refresh this page to retry.");
+      });
 
-        setInited(true);
-      }).catch(() => {
-        toastError(t, "Please refresh this page to retry.")
-      })
+      getMusicApis().then(as => setApis(as));
+
+      setInited(true);
     }
   }, []);
+
+  useEffect(() => {
+
+  }, [conn]);
 
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={"2fr 5fr"} gap="1">
@@ -66,7 +98,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <GridItem area={"nav"}>
-        <Stack>
+        <Stack m={4} spacing={4}>
           <Card>
             <CardHeader>
               <Heading>{`Welcome, ${userName}!`}</Heading>
@@ -92,8 +124,8 @@ export default function Home() {
                           <Button colorScheme='blue' onClick={async () => {
                             if (newName === "") return;
                             await conn.current!.rename(newName);
-                            const profile = await getProfile();
-                            setUserName(profile.name);
+                            const user = await getProfile();
+                            setUserName(user.name);
                             onClose();
                             setNewName("");
                           }}>Comfirm</Button>
@@ -115,8 +147,8 @@ export default function Home() {
             <CardBody>
               <UnorderedList>
                 {onlineUsers.map((u) => {
-                  return <ListItem key={u}>
-                    {u}
+                  return <ListItem key={u.id}>
+                    {u.name}
                   </ListItem>
                 })}
               </UnorderedList>
@@ -131,9 +163,9 @@ export default function Home() {
             <CardBody>
               <Flex>
                 <Input flex={1} value={chatToSend} onChange={e => setChatToSend(e.target.value)} />
-                <Button onClick={async () => {
+                <Button ml={2} onClick={async () => {
                   if (chatToSend === "") return;
-                  await conn.current?.ChatSay(chatToSend);
+                  await conn.current?.chatSay(chatToSend);
                   setChatToSend("");
                 }}>Send</Button>
               </Flex>
@@ -154,7 +186,7 @@ export default function Home() {
               Music Play
             </Tab>
             <Tab>
-              Music Selection
+              Select Music
             </Tab>
             <Tab>
               My Playlists
@@ -162,10 +194,10 @@ export default function Home() {
           </TabList>
           <TabPanels>
             <TabPanel>
-              <Flex direction={"row"} mb={4} alignItems={"flex-end"}>
+              <Flex flexDirection={"row"} mb={4} alignItems={"flex-end"}>
                 {nowPlaying ? <>
                   <Heading>
-                    {`Now Playing:\n ${nowPlaying?.music.name} - ${nowPlaying?.music.artist}`}
+                    {`Now Playing:\n ${nowPlaying?.music.name} - ${nowPlaying?.music.artists}`}
                   </Heading>
                   <Text size={"md"} fontStyle={"italic"} ml={2}>
                     {`Enqueued by ${nowPlaying?.enqueuer}`}
@@ -176,18 +208,28 @@ export default function Home() {
                 }
               </Flex>
 
-              <Card mb={4}>
+              <MusicPlayer src={src} playtime={playtime} nextClick={() => {
+                conn.current?.nextSong();
+              }} reset={() => {
+                console.log("reset");
+                conn.current!.requestSetNowPlaying();
+                conn.current!.getMusicQueue().then(q => {
+                  setQueue(q);
+                });
+              }} />
+
+              <Card mt={4}>
                 <CardHeader>
                   <Heading size={"lg"}>Queue</Heading>
                 </CardHeader>
                 <CardBody>
                   <OrderedList>
                     {queue.length > 0 ? queue.map((v) => (
-                      <ListItem key={v.music.name} fontSize={"lg"}>
+                      <ListItem key={Math.random() * 1000} fontSize={"lg"}>
                         <Box>
-                          {v.music.name} - {v.music.artist}
+                          {v.music.name} - {v.music.artists}
                           <Text fontSize={"sm"} fontStyle={"italic"}>
-                            enqueued by {v.enqueuer}
+                            enqueued by {v.enqueuerName}
                           </Text>
                         </Box>
                       </ListItem>)) : <Text size={"md"}>
@@ -198,36 +240,14 @@ export default function Home() {
                   </OrderedList>
                 </CardBody>
               </Card>
-
-              <MusicPlayer src={src} playtime={playtime} nextClick={() => {
-                conn.current?.nextSong();
-              }} reset={() => {
-                console.log("reset");
-                conn.current?.RequestSetNowplaying();
-                conn.current?.RequestQueueUpdate();
-              }} />
-
             </TabPanel>
             <TabPanel>
-              <Input type={"text"} value={id} placeholder={"type music id here"} onChange={e => {
-                setId(e.target.value);
-              }} />
-              <Button onClick={() => {
-                if (id.length > 0)
-                  conn.current?.AddMusicToQueue(id).then(() => {
-                    toastEnqueueOk(t);
-                    setId("");
-                  }).catch(() => {
-                    toastError(t, `Enqueuing music {id: ${id}} failed.`);
-                  });
-              }}>
-                Enqueue
-              </Button>
+              <MusicSelector apis={apis} conn={conn.current!} />
             </TabPanel>
             <TabPanel>
               {!inited ? <Text>Initializing...</Text> :
-                <MyPlaylist enqueue={(id) => {
-                  conn.current!.AddMusicToQueue(id)
+                <MyPlaylist apis={apis} enqueue={(id, apiName) => {
+                  conn.current!.enqueueMusic(id, apiName)
                     .then(() => {
                       toastEnqueueOk(t);
                     }).catch(() => {

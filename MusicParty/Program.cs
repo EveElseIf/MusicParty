@@ -54,6 +54,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
+app.UsePreprocess();
+
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();

@@ -22,26 +22,6 @@ public class ApiController : ControllerBase
     [HttpGet, Route("MusicServices")]
     public IActionResult MusicServices() => Ok(_musicApis.Select(a => a.ServiceName).ToList());
 
-    [HttpGet, Route("New")]
-    public async Task<IActionResult> New()
-    {
-        var id = HttpContext.User.Identity!.Name;
-        if (string.IsNullOrEmpty(id))
-        {
-            var newId = Guid.NewGuid().ToString()[..8];
-            await _userManager.LoginAsync(newId);
-        }
-
-        if (!string.IsNullOrEmpty(id) && _userManager.FindUserById(id) is null)
-        {
-            await _userManager.LogoutAsync(id);
-            var newId = Guid.NewGuid().ToString()[..8];
-            await _userManager.LoginAsync(newId);
-        }
-
-        return Ok();
-    }
-
     [HttpGet, Route("Profile"), Authorize]
     public IActionResult Profile()
     {
@@ -49,19 +29,18 @@ public class ApiController : ControllerBase
         return Ok(new { Name = name });
     }
 
-    [HttpGet, Route("Rename/{name}"), Authorize]
-    public IActionResult Rename(string name)
+    [HttpGet, Route("Rename/{newName}"), Authorize]
+    public IActionResult Rename(string newName)
     {
-        _userManager.RenameUserById(HttpContext.User.Identity!.Name!, name);
+        _userManager.RenameUserById(HttpContext.User.Identity!.Name!, newName);
         return Ok();
     }
 
     [HttpGet, Route("{apiName}/SearchUser/{keyword}"), Authorize]
     public async Task<IActionResult> SearchUser(string apiName, string keyword)
     {
-        if (string.IsNullOrEmpty(apiName)) return BadRequest("Specify an api provider.");
         if (!_musicApis.TryGetMusicApi(apiName, out var ma))
-            return BadRequest($"Unknown api provider ${apiName}.");
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
         return Ok(await ma!.SearchUserAsync(keyword));
     }
 
@@ -69,7 +48,7 @@ public class ApiController : ControllerBase
     public IActionResult Bind(string apiName, string identifier)
     {
         if (!_musicApis.TryGetMusicApi(apiName, out _))
-            return BadRequest($"Unknown api provider ${apiName}.");
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
         _userManager.BindMusicApiService(HttpContext.User.Identity!.Name!, apiName, identifier);
         return Ok();
     }
@@ -79,21 +58,23 @@ public class ApiController : ControllerBase
     {
         var user = _userManager.FindUserById(HttpContext.User.Identity!.Name!)!;
         if (!user.TryGetMusicApiServiceBinding(apiName, out var identifier))
-            return BadRequest($"You should bind your {apiName} Account first.");
+            return BadRequest($"You should bind your {apiName} Account first.".BuildResponseMessageWithCode(2));
 
         if (!_musicApis.TryGetMusicApi(apiName, out var ma))
-            return BadRequest($"Unknown api provider ${apiName}.");
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
 
         var playlists = await ma!.GetUserPlayListAsync(identifier!);
 
         return Ok(playlists);
     }
 
-    [HttpGet, Route("{api}/playlistmusics/{id}"), Authorize]
-    public async Task<IActionResult> PlaylistMusics(string api, string id, [FromQuery] int page = 0)
+    [HttpGet, Route("{apiName}/playlistmusics/{id}"), Authorize]
+    public async Task<IActionResult> PlaylistMusics(string apiName, string id, [FromQuery] int page = 0)
     {
-        if (!_musicApis.TryGetMusicApi(api, out var ma))
-            return BadRequest($"Unknown api provider ${api}.");
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
+        if (string.IsNullOrEmpty(id))
+            return BadRequest("Id cannot be null".BuildResponseMessageWithCode(3));
         var musics = await ma!.GetMusicsByPlaylistAsync(id, page * 10);
         return Ok(musics);
     }

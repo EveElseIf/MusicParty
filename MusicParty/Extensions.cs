@@ -14,4 +14,9 @@ public static class Extensions
     {
         return user.MusicApiServiceBindings.TryGetValue(serviceName, out identifier);
     }
+
+    public static dynamic BuildResponseMessageWithCode(this string message, int code)
+    {
+        return new { Code = code, Message = message };
+    }
 }

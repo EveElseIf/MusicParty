@@ -1,8 +1,8 @@
-import { Text, AccordionItem, AccordionButton, Box, AccordionIcon, AccordionPanel, List, ListItem, Flex, Button, Skeleton, Stack } from "@chakra-ui/react";
+import { Text, AccordionItem, AccordionButton, Box, AccordionIcon, AccordionPanel, List, ListItem, Flex, Button, Skeleton, Stack, Divider } from "@chakra-ui/react";
 import { useEffect, useState } from "react"
 import { getMusicsByPlaylist, Music } from "../api/api";
 
-export const Playlist = (props: { id: string, name: string, enqueue: (id: string) => void }) => {
+export const Playlist = (props: { id: string, name: string, apiName: string, enqueue: (id: string, apiName: string) => void }) => {
     const [loaded, setLoaded] = useState(false);
     const [musics, setMusics] = useState<Music[]>([]);
     const [canshow, setCanshow] = useState(false);
@@ -10,7 +10,7 @@ export const Playlist = (props: { id: string, name: string, enqueue: (id: string
 
     useEffect(() => {
         if (!loaded) return;
-        getMusicsByPlaylist(props.id, page).then((res) => setMusics(res));
+        getMusicsByPlaylist(props.id, page, props.apiName).then((res) => setMusics(res));
     }, [page]);
 
     return (<AccordionItem>
@@ -18,7 +18,7 @@ export const Playlist = (props: { id: string, name: string, enqueue: (id: string
             <AccordionButton onClick={async () => {
                 if (loaded) return;
                 else setLoaded(true);
-                const musics = await getMusicsByPlaylist(props.id, 0);
+                const musics = await getMusicsByPlaylist(props.id, 0, props.apiName);
                 setMusics(musics);
                 setCanshow(true);
             }}>
@@ -32,18 +32,20 @@ export const Playlist = (props: { id: string, name: string, enqueue: (id: string
             <Skeleton isLoaded={canshow}>
                 {musics.length > 0 || musics.length === 0 && page != 0 ?
                     <Stack>
-                        <List>
-                            {musics.map(m => (<ListItem key={m.id} pb={4}>
+                        <Divider />
+                        <List spacing={2}>
+                            {musics.map(m => (<ListItem key={m.id}>
                                 <Flex>
                                     <Text flex={1}>
-                                        {`${m.name} - ${m.artist}`}
+                                        {`${m.name} - ${m.artists}`}
                                     </Text>
                                     <Button onClick={() => {
-                                        props.enqueue(m.id);
+                                        props.enqueue(m.id, props.apiName);
                                     }}>Enqueue</Button>
                                 </Flex>
                             </ListItem>))}
                         </List>
+                        <Divider />
                         <Flex justifyContent={"flex-end"}>
                             <Flex alignItems={"center"}>
                                 {`page ${page}`}
