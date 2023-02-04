@@ -1,0 +1,8 @@
+FROM bitnami/dotnet-sdk:6
+COPY ./MusicParty /src/MusicParty
+COPY ./MusicApiContract /src/MusicApiContract
+COPY ./NeteaseCloudMusicApi /src/NeteaseCloudMusicApi
+WORKDIR /src
+RUN dotnet build -c release -o /build MusicParty
+WORKDIR /build
+ENTRYPOINT [ "dotnet" , "MusicParty.dll" , "--urls" , "http://0.0.0.0:5000" ]
