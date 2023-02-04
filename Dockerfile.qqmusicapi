@@ -1,6 +1,7 @@
 FROM node:slim
 RUN apt update
 RUN apt install unzip wget -y
+RUN wget https://github.com/jsososo/QQMusicApi/archive/refs/heads/master.zip
 RUN unzip master.zip
 RUN cd QQMusicApi-master
 RUN yarn
