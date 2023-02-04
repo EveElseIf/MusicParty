@@ -1,0 +1,7 @@
+FROM node:slim
+RUN apt update
+RUN apt install unzip wget -y
+RUN unzip master.zip
+RUN cd QQMusicApi-master
+RUN yarn
+ENTRYPOINT [ "yarn" , "start" ]
