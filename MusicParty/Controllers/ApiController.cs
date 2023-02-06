@@ -85,4 +85,13 @@ public class ApiController : ControllerBase
         var musics = await ma!.GetMusicsByPlaylistAsync(id, page * 10);
         return Ok(musics);
     }
+
+    [HttpGet, Route("resetqqmusic")]
+    public async Task<IActionResult> ResetQQMusic()
+    {
+        if (!_musicApis.TryGetMusicApi("QQMusic", out var ma))
+            return BadRequest();
+        await (ma as MusicApi.QQMusic.QQMusicApi)!.SetCookie();
+        return Ok();
+    }
 }

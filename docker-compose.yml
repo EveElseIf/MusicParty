@@ -12,6 +12,8 @@ services:
       QQ: "" # don't forget this
     expose:
       - 3300
+    ports:
+      - "2707:3300" # we need this to set cookie manually
   frontend:
     build:
       dockerfile: Dockerfile.frontend
