@@ -5,5 +5,4 @@ RUN wget https://github.com/jsososo/QQMusicApi/archive/refs/heads/master.zip
 RUN unzip master.zip
 WORKDIR /QQMusicApi-master
 RUN yarn
-WORKDIR /QQMusicApi-master
 ENTRYPOINT [ "yarn" , "start" ]

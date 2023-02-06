@@ -5,31 +5,13 @@ services:
       dockerfile: Dockerfile.neteaseapi
     expose:
       - 3000
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "echo 'fetch(\"http://localhost:3000\")' | node"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
   qqmusicapi:
     build:
       dockerfile: Dockerfile.qqmusicapi
     environment:
-      QQ: ""
+      QQ: "" # don't forget this
     expose:
       - 3300
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "echo 'fetch(\"http://localhost:3300\")' | node"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
   frontend:
     build:
       dockerfile: Dockerfile.frontend
@@ -39,17 +21,17 @@ services:
     build:
       dockerfile: Dockerfile.backend
     environment:
+      MusicApi:NeteaseCloudMusic:Enabled: "true"
       MusicApi:NeteaseCloudMusic:ApiServerUrl: "http://neteaseapi:3000"
       MusicApi:NeteaseCloudMusic:PhoneNo: ""
+      MusicApi:QQMusic:Enabled: "true"
       MusicApi:QQMusic:ApiServerUrl: "http://qqmusicapi:3300"
-      MusicApi:QQMusic:QQNo: ""
+      MusicApi:QQMusic:QQNo: "" # also set QQ number at line:12
       MusicApi:QQMusic:Cookie: ""
       FrontEndUrl: "http://frontend:3000"
     depends_on:
-      neteaseapi:
-        condition: service_healthy
-      qqmusicapi:
-        condition: service_healthy
+      - neteaseapi
+      - qqmusicapi
     ports:
       - "2706:5000"
     tty: true

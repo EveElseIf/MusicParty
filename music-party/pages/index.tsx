@@ -139,8 +139,8 @@ export default function Home() {
                     </Portal>
                   </>)}
                 </Popover>
-                <NeteaseBinder />
-                <QQMusicBinder />
+                {apis.includes("NeteaseCloudMusic") && <NeteaseBinder />}
+                {apis.includes("QQMusic") && <QQMusicBinder />}
               </Stack>
             </CardBody>
           </Card>
