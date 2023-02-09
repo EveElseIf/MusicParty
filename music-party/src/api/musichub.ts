@@ -2,9 +2,11 @@ import * as sr from "@microsoft/signalr"
 export class Connection {
     private _conn: sr.HubConnection;
     constructor(url: string,
-        setNowPlaying: (music: music, enqueuerName: string, playedTime: number) => void,
-        musicEnqueued: (music: music, enqueuerName: string) => void,
+        setNowPlaying: (music: Music, enqueuerName: string, playedTime: number) => void,
+        musicEnqueued: (actionId: string, music: Music, enqueuerName: string) => void,
         musicDequeued: () => void,
+        musicTopped: (actionId: string, operatorName: string) => void,
+        musicCut: (operatorName: string, music: Music) => void,
         onlineUserLogin: (id: string, name: string) => void,
         onlineUserLogout: (id: string) => void,
         onlineUserRename: (id: string, newName: string) => void,
@@ -16,12 +18,17 @@ export class Connection {
         this._conn.on("SetNowPlaying", setNowPlaying);
         this._conn.on("MusicEnqueued", musicEnqueued);
         this._conn.on("MusicDequeued", musicDequeued);
+        this._conn.on("MusicTopped", musicTopped);
+        this._conn.on("MusicCut", musicCut);
         this._conn.on("OnlineUserLogin", onlineUserLogin);
         this._conn.on("OnlineUserLogout", onlineUserLogout);
         this._conn.on("OnlineUserRename", onlineUserRename);
         this._conn.on("NewChat", newChat);
         this._conn.on("GlobalMessage", globalMessage);
         this._conn.on("Abort", abort);
+        this._conn.onclose(e => {
+            alert(`You are disconnected, please refresh the page.\nmessage: ${e}`);
+        })
     }
     public async start(): Promise<any> {
         if (this._conn.state === sr.HubConnectionState.Disconnected) {
@@ -35,11 +42,14 @@ export class Connection {
     public async requestSetNowPlaying(): Promise<void> {
         await this._conn.invoke("RequestSetNowPlaying");
     }
-    public async getMusicQueue(): Promise<{ music: music, enqueuerName: string }[]> {
+    public async getMusicQueue(): Promise<MusicOrderAction[]> {
         return await this._conn.invoke("GetMusicQueue");
     }
     public async nextSong(): Promise<void> {
         await this._conn.invoke("NextSong");
+    }
+    public async topSong(actionId: string): Promise<void> {
+        await this._conn.invoke("TopSong", actionId);
     }
     public async rename(newName: string): Promise<void> {
         await this._conn.invoke("Rename", newName);
@@ -51,8 +61,14 @@ export class Connection {
         await this._conn.invoke("ChatSay", content);
     }
 }
-export interface music {
+export interface Music {
     url: string;
     name: string;
     artists: string[];
+}
+
+export interface MusicOrderAction {
+    actionId: string;
+    music: Music;
+    enqueuerName: string;
 }

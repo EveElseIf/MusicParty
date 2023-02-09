@@ -1,20 +1,21 @@
 import Head from 'next/head'
 import React, { useEffect, useRef, useState } from 'react'
-import { Connection, music } from '../src/api/musichub'
+import { Connection, Music, MusicOrderAction } from '../src/api/musichub'
 import { Text, Button, Card, CardBody, CardHeader, Grid, GridItem, Heading, Input, ListItem, OrderedList, Tab, TabList, TabPanel, TabPanels, Tabs, useToast, Stack, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, Portal, UnorderedList, Flex, Highlight, Box } from '@chakra-ui/react'
 import { MusicPlayer } from '../src/components/musicplayer';
 import { getMusicApis, getProfile } from '../src/api/api';
 import { NeteaseBinder } from '../src/components/neteasebinder';
 import { MyPlaylist } from '../src/components/myplaylist';
-import { toastEnqueueOk, toastError } from '../src/utils/toast';
+import { toastEnqueueOk, toastError, toastInfo } from '../src/utils/toast';
 import { MusicSelector } from '../src/components/musicselector';
 import { QQMusicBinder } from '../src/components/qqmusicbinder';
+import { MusicQueue } from '../src/components/musicqueue';
 
 export default function Home() {
   const [src, setSrc] = useState("");
   const [playtime, setPlaytime] = useState(0);
-  const [nowPlaying, setNowPlaying] = useState<{ music: music, enqueuer: string }>();
-  const [queue, setQueue] = useState<{ music: music, enqueuerName: string }[]>([]);
+  const [nowPlaying, setNowPlaying] = useState<{ music: Music, enqueuer: string }>();
+  const [queue, setQueue] = useState<MusicOrderAction[]>([]);
   const [userName, setUserName] = useState("");
   const [newName, setNewName] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<{ id: string, name: string }[]>([]);
@@ -29,17 +30,27 @@ export default function Home() {
     if (!conn.current) {
       conn.current = new Connection(
         `${window.location.origin}/music`,
-        async (music: music, enqueuerName: string, playedTime: number) => {
+        async (music: Music, enqueuerName: string, playedTime: number) => {
           console.log(music);
           setSrc(music.url);
           setNowPlaying({ music, enqueuer: enqueuerName });
           setPlaytime(playedTime);
         },
-        async (music: music, enqueuerName: string) => {
-          setQueue(q => q.concat({ music, enqueuerName: enqueuerName }));
+        async (actionId: string, music: Music, enqueuerName: string) => {
+          setQueue(q => q.concat({ actionId, music, enqueuerName }));
         },
         async () => {
           setQueue(q => q.slice(1));
+        },
+        async (actionId: string, operatorName: string) => {
+          setQueue(q => {
+            const target = q.find(x => x.actionId === actionId)!;
+            toastInfo(t, `"${target.music.name}-${target.music.artists}" had been topped by ${operatorName}.`);
+            return [target].concat(q.filter(x => x.actionId !== actionId))
+          });
+        },
+        async (operatorName: string, _) => {
+          toastInfo(t, `Current song had been cut by ${operatorName}`);
         },
         async (id: string, name: string) => {
           setOnlineUsers(u => u.concat({ id, name }));
@@ -90,10 +101,6 @@ export default function Home() {
       setInited(true);
     }
   }, []);
-
-  useEffect(() => {
-
-  }, [conn]);
 
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={"2fr 5fr"} gap="1">
@@ -224,28 +231,9 @@ export default function Home() {
                 });
               }} />
 
-              <Card mt={4}>
-                <CardHeader>
-                  <Heading size={"lg"}>Queue</Heading>
-                </CardHeader>
-                <CardBody>
-                  <OrderedList>
-                    {queue.length > 0 ? queue.map((v) => (
-                      <ListItem key={Math.random() * 1000} fontSize={"lg"}>
-                        <Box>
-                          {v.music.name} - {v.music.artists}
-                          <Text fontSize={"sm"} fontStyle={"italic"}>
-                            enqueued by {v.enqueuerName}
-                          </Text>
-                        </Box>
-                      </ListItem>)) : <Text size={"md"}>
-                      <Highlight query={"enqueue"} styles={{ px: '2', py: '1', rounded: 'full', bg: 'teal.100' }}>
-                        The queue is null currently, feel free to enqueue some music.
-                      </Highlight>
-                    </Text>}
-                  </OrderedList>
-                </CardBody>
-              </Card>
+              <MusicQueue queue={queue} top={actionId => {
+                conn.current!.topSong(actionId);
+              }} />
             </TabPanel>
             <TabPanel>
               <MusicSelector apis={apis} conn={conn.current!} />

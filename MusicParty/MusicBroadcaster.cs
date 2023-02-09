@@ -7,7 +7,7 @@ namespace MusicParty;
 public class MusicBroadcaster
 {
     public (PlayableMusic music, string enqueuerId)? NowPlaying { get; private set; }
-    private Queue<(Music music, string service, string enqueuerId)> MusicQueue { get; } = new();
+    private ToppableQueue<MusicOrderAction> MusicQueue { get; } = new();
     public DateTime NowPlayingStartedTime { get; private set; }
     private readonly IEnumerable<IMusicApi> _apis;
     private readonly IHubContext<MusicHub> _context;
@@ -33,11 +33,11 @@ public class MusicBroadcaster
                 if (MusicQueue.TryDequeue(out var musicOrder))
                 {
                     await MusicDequeued();
-                    if (!_apis.TryGetMusicApi(musicOrder.service, out var ma))
+                    if (!_apis.TryGetMusicApi(musicOrder.Service, out var ma))
                     {
-                        _logger.LogError(new ArgumentException($"Unknown api provider {musicOrder.service}",
-                                nameof(musicOrder.service)), "{MusicId} with {Api} play failed, skipping...",
-                            musicOrder.music.Id, musicOrder.service);
+                        _logger.LogError(new ArgumentException($"Unknown api provider {musicOrder.Service}",
+                                nameof(musicOrder.Service)), "{MusicId} with {Api} play failed, skipping...",
+                            musicOrder.Music.Id, musicOrder.Service);
                         continue;
                     }
 
@@ -45,10 +45,10 @@ public class MusicBroadcaster
                     {
                         try
                         {
-                            NowPlaying = (await ma!.GetPlayableMusicAsync(musicOrder.music), musicOrder.enqueuerId);
+                            NowPlaying = (await ma!.GetPlayableMusicAsync(musicOrder.Music), musicOrder.EnqueuerId);
                             NowPlayingStartedTime = DateTime.Now;
                             await SetNowPlaying(NowPlaying.Value.music,
-                                _userManager.FindUserById(musicOrder.enqueuerId)!.Name);
+                                _userManager.FindUserById(musicOrder.EnqueuerId)!.Name);
                             break;
                         }
                         catch (Exception ex)
@@ -56,8 +56,8 @@ public class MusicBroadcaster
                             if (i >= 2) // failed 3 times, skip.
                             {
                                 _logger.LogError(ex, "{MusicId} with {Api} play failed, skipping...",
-                                    musicOrder.music.Id, musicOrder.service);
-                                await GlobalMessage($"Failed to play {musicOrder.music.Name}, skip to next music.");
+                                    musicOrder.Music.Id, musicOrder.Service);
+                                await GlobalMessage($"Failed to play {musicOrder.Music.Name}, skip to next music.");
                                 break;
                             }
                         }
@@ -77,18 +77,26 @@ public class MusicBroadcaster
         }
     }
 
-    public IEnumerable<(Music music, string enqueuerName)> GetQueue()
-        => MusicQueue.Select(x => (x.music, _userManager.FindUserById(x.enqueuerId)!.Name)).ToList();
+    public IEnumerable<MusicOrderAction> GetQueue() => MusicQueue;
 
     public async Task EnqueueMusic(Music music, string apiName, string enqueuerId)
     {
-        MusicQueue.Enqueue((music, apiName, enqueuerId));
-        await MusicEnqueued(music, _userManager.FindUserById(enqueuerId)!.Name);
+        var action = new MusicOrderAction(Guid.NewGuid().ToString()[..8], music, apiName, enqueuerId);
+        MusicQueue.Enqueue(action);
+        await MusicEnqueued(action.ActionId, music, _userManager.FindUserById(enqueuerId)!.Name);
     }
 
-    public void NextSong()
+    public async Task NextSong(string operatorId)
     {
+        if (NowPlaying is null) return;
+        await MusicCut(operatorId, NowPlaying.Value.music);
         NowPlaying = null;
+    }
+
+    public async Task TopSong(string actionId, string operatorId)
+    {
+        MusicQueue.TopItem(x => x.ActionId == actionId);
+        await MusicTopped(actionId, _userManager.FindUserById(operatorId)!.Name);
     }
 
     private async Task SetNowPlaying(PlayableMusic music, string enqueuerName)
@@ -97,9 +105,9 @@ public class MusicBroadcaster
             0); // arg3 is music already played time
     }
 
-    private async Task MusicEnqueued(Music music, string enqueuerName)
+    private async Task MusicEnqueued(string actionId, Music music, string enqueuerName)
     {
-        await _context.Clients.All.SendAsync(nameof(MusicEnqueued), music, enqueuerName);
+        await _context.Clients.All.SendAsync(nameof(MusicEnqueued), actionId, music, enqueuerName);
     }
 
     private async Task MusicDequeued()
@@ -107,8 +115,52 @@ public class MusicBroadcaster
         await _context.Clients.All.SendAsync(nameof(MusicDequeued));
     }
 
+    private async Task MusicTopped(string actionId, string operatorName)
+    {
+        await _context.Clients.All.SendAsync(nameof(MusicTopped), actionId, operatorName);
+    }
+
+    private async Task MusicCut(string operatorId, Music music)
+    {
+        await _context.Clients.All.SendAsync(nameof(MusicCut), _userManager.FindUserById(operatorId)!.Name, music);
+    }
+
     private async Task GlobalMessage(string content)
     {
         await _context.Clients.All.SendAsync(nameof(GlobalMessage), content);
+    }
+
+    public record MusicOrderAction(string ActionId, Music Music, string Service, string EnqueuerId);
+
+    private class ToppableQueue<T> : LinkedList<T>
+    {
+        public void TopItem(Func<T, bool> pred)
+        {
+            if (Count == 1)
+                return;
+            var node = Find(this.First(pred))!; // if count == 0, this will throw an exception.
+            Remove(node);
+            AddBefore(First!, node);
+        }
+
+        public void Enqueue(T item)
+        {
+            AddLast(item);
+        }
+
+        public bool TryDequeue(out T? item)
+        {
+            if (Count == 0)
+            {
+                item = default;
+                return false;
+            }
+            else
+            {
+                item = First!.Value;
+                RemoveFirst();
+                return true;
+            }
+        }
     }
 }

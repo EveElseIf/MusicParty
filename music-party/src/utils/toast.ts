@@ -21,3 +21,14 @@ export const toastError = (t: CreateToastFnReturn, msg: string) => {
         isClosable: true
     });
 }
+
+export const toastInfo = (t: CreateToastFnReturn, msg: string) => {
+    t({
+        title: "Info",
+        description: msg,
+        status: "info",
+        duration: 5000,
+        position: "top-right",
+        isClosable: true
+    });
+}

@@ -90,16 +90,22 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
             (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
     }
 
-    public record MusicEnqueueOrder(Music Music, string EnqueuerName);
+    public record MusicEnqueueOrder(string ActionId, Music Music, string EnqueuerName);
 
     public IEnumerable<MusicEnqueueOrder> GetMusicQueue()
     {
-        return _musicBroadcaster.GetQueue().Select(x => new MusicEnqueueOrder(x.music, x.enqueuerName)).ToList();
+        return _musicBroadcaster.GetQueue().Select(x =>
+            new MusicEnqueueOrder(x.ActionId, x.Music, _userManager.FindUserById(x.EnqueuerId)!.Name)).ToList();
     }
 
-    public void NextSong()
+    public async Task NextSong()
     {
-        _musicBroadcaster.NextSong();
+        await _musicBroadcaster.NextSong(Context.User!.Identity!.Name!);
+    }
+
+    public async Task TopSong(string actionId)
+    {
+        await _musicBroadcaster.TopSong(actionId, Context.User!.Identity!.Name!);
     }
 
     public async Task Rename(string newName)
