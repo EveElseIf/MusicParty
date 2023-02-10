@@ -3,6 +3,7 @@ COPY ./MusicParty /src/MusicParty
 COPY ./MusicApiContract /src/MusicApiContract
 COPY ./NeteaseCloudMusicApi /src/NeteaseCloudMusicApi
 COPY ./QQMusicApi /src/QQMusicApi
+COPY ./BilibiliApi /src/BilibiliApi
 WORKDIR /src
 RUN dotnet build -c release -o /build MusicParty
 WORKDIR /build

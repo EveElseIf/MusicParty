@@ -2,12 +2,12 @@ version: "3.9"
 services:
   neteaseapi:
     build:
-      dockerfile: Dockerfile.neteaseapi
+      dockerfile: Dockerfile-neteaseapi
     expose:
       - 3000
   qqmusicapi:
     build:
-      dockerfile: Dockerfile.qqmusicapi
+      dockerfile: Dockerfile-qqmusicapi
     environment:
       QQ: "" # don't forget this
     expose:
@@ -16,12 +16,12 @@ services:
       - "2707:3300" # we need this to set cookie manually
   frontend:
     build:
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile-frontend
     expose:
       - 3000
   backend:
     build:
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile-backend
     environment:
       MusicApi__NeteaseCloudMusic__Enabled: "true"
       MusicApi__NeteaseCloudMusic__ApiServerUrl: "http://neteaseapi:3000"
