@@ -10,8 +10,6 @@ services:
       dockerfile: Dockerfile-qqmusicapi
     expose:
       - 3300
-    ports:
-      - "2707:3300" # we need this to set cookie manually
   frontend:
     build:
       dockerfile: Dockerfile-frontend
