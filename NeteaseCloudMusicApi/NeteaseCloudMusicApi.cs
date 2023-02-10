@@ -165,7 +165,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/song/url/v1?id={music.Id}&level=exhigh");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
-            throw new Exception($"Unable to get playable music, id: {music.Id}");
+            throw new Exception($"Unable to get playable music, message: {resp}");
         var url = (string)j["data"]![0]!["url"]!;
         var length = (long)j["data"]![0]!["time"]!;
         return new PlayableMusic(music) { Url = url.Replace("http", "https"), Length = length };
@@ -176,7 +176,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/song/detail?ids={id}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200 || j["songs"]!.AsArray().Count == 0)
-            throw new Exception($"Unable to get music, id: {id}");
+            throw new Exception($"Unable to get music, message: {resp}");
         var name = (string)j["songs"]![0]!["name"]!;
         var ar = j["songs"]![0]!["ar"]!.AsArray().Select(x => x!["name"]!.GetValue<string>()).ToArray();
         return new Music(id, name, ar);
@@ -192,11 +192,10 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/search?type=1002&keywords={keyword}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
-            throw new Exception($"Unable to search user, keyword: {keyword}");
+            throw new Exception($"Unable to search user, message: {resp}");
 
         return j["result"]!["userprofiles"]!.AsArray()
-            .Select(x => new MusicServiceUser(x!["userId"]!.GetValue<long>().ToString(), (string)x["nickname"]!))
-            .ToList();
+            .Select(x => new MusicServiceUser(x!["userId"]!.GetValue<long>().ToString(), (string)x["nickname"]!));
     }
 
     public async Task<IEnumerable<PlayList>> GetUserPlayListAsync(string userIdentifier)
@@ -204,12 +203,12 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/user/playlist?uid={userIdentifier}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
-            throw new Exception($"Unable to get user playlist, user identifier: {userIdentifier}");
+            throw new Exception($"Unable to get user playlist, message: ${resp}");
 
-        return (from b in j["playlist"]!.AsArray()
+        return from b in j["playlist"]!.AsArray()
             let id = b["id"].GetValue<long>().ToString()
             let name = (string)b["name"]
-            select new PlayList(id, name)).ToList();
+            select new PlayList(id, name);
     }
 
     public async Task<IEnumerable<Music>> GetMusicsByPlaylistAsync(string id, int offset = 0)
@@ -217,12 +216,12 @@ public class NeteaseCloudMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/playlist/track/all?id={id}&limit=10&offset={offset}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
-            throw new Exception($"Unable to get playlist musics, playlist id: {id}.");
+            throw new Exception($"Unable to get playlist musics, message: {resp}");
 
-        return (from b in j["songs"]!.AsArray()
+        return from b in j["songs"]!.AsArray()
             let id2 = b["id"].GetValue<long>().ToString()
             let name = (string)b["name"]
             let artists = b["ar"].AsArray().Select(y => (string)y["name"]).ToArray()
-            select new Music(id2, name, artists)).ToList();
+            select new Music(id2, name, artists);
     }
 }

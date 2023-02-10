@@ -23,13 +23,16 @@ services:
     build:
       dockerfile: Dockerfile.backend
     environment:
-      MusicApi:NeteaseCloudMusic:Enabled: "true"
-      MusicApi:NeteaseCloudMusic:ApiServerUrl: "http://neteaseapi:3000"
-      MusicApi:NeteaseCloudMusic:PhoneNo: ""
-      MusicApi:QQMusic:Enabled: "true"
-      MusicApi:QQMusic:ApiServerUrl: "http://qqmusicapi:3300"
-      MusicApi:QQMusic:QQNo: "" # also set QQ number at line:12
-      MusicApi:QQMusic:Cookie: ""
+      MusicApi__NeteaseCloudMusic__Enabled: "true"
+      MusicApi__NeteaseCloudMusic__ApiServerUrl: "http://neteaseapi:3000"
+      MusicApi__NeteaseCloudMusic__PhoneNo: ""
+      MusicApi__QQMusic__Enabled: "true"
+      MusicApi__QQMusic__ApiServerUrl: "http://qqmusicapi:3300"
+      MusicApi__QQMusic__QQNo: "" # also set QQ number at line__12
+      MusicApi__QQMusic__Cookie: ""
+      MusicApi__Bilibili__Enabled: "true"
+      MusicApi__Bilibili__SESSDATA: ""
+      MusicApi__Bilibili__PhoneNo: ""
       FrontEndUrl: "http://frontend:3000"
     depends_on:
       - neteaseapi

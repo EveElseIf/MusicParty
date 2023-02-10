@@ -47,7 +47,7 @@ public class QQMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/song?songmid={ids[0]}");
         var j = JsonNode.Parse(resp)!;
         if (j["result"]!.GetValue<int>() != 100)
-            throw new Exception($"Unable to get playable music, id: {id}");
+            throw new Exception($"Unable to get music, message: {resp}");
         var name = j["data"]!["track_info"]!["name"]!.GetValue<string>();
         var artists = j["data"]!["track_info"]!["singer"]!.AsArray()
             .Select(x => x!["name"]!.GetValue<string>()).ToArray();
@@ -65,7 +65,7 @@ public class QQMusicApi : IMusicApi
         var resp1 = await _http.GetStringAsync(_url + $"/song?songmid={ids[0]}");
         var j1 = JsonNode.Parse(resp1)!;
         if (j1["result"]!.GetValue<int>() != 100)
-            throw new Exception($"Unable to get playable music, id: {music.Id}");
+            throw new Exception($"Unable to get playable music, message: {resp1}");
         var length = j1["data"]!["track_info"]!["interval"]!.GetValue<int>() * 1000;
         string url;
         var resp2 = await _http.GetStringAsync(_url + $"/song/url?id={ids[0]}&mediaId={ids[1]}&type=320");
@@ -76,7 +76,7 @@ public class QQMusicApi : IMusicApi
                                                    $"/song/url?id={ids[0]}&mediaId={ids[1]}"); // no 320 mp3, try 128
             var j3 = JsonNode.Parse(resp3)!;
             if (j3["result"]!.GetValue<int>() != 100 || string.IsNullOrEmpty(j3["data"]!.GetValue<string>()))
-                throw new Exception($"Unable to get playable music, id: {music.Id}");
+                throw new Exception($"Unable to get playable music, message: {resp2}");
             url = j3["data"]!.GetValue<string>();
         }
         else
@@ -95,22 +95,22 @@ public class QQMusicApi : IMusicApi
         var resp1 = await _http.GetStringAsync(_url + $"/user/songlist?id={userIdentifier}");
         var j1 = JsonNode.Parse(resp1)!;
         if (j1["result"]!.GetValue<int>() != 100)
-            throw new Exception($"Unable to get user playlist, user identifier: {userIdentifier}");
+            throw new Exception($"Unable to get user playlist, message: ${resp1}");
         var playlists1 = j1["data"]!["list"]!.AsArray()
             .Select(x => new PlayList(
                 x!["tid"]!.GetValue<long>().ToString(),
-                x!["diss_name"]!.GetValue<string>())).Where(x => x.Id != "0").ToArray();
+                x!["diss_name"]!.GetValue<string>())).Where(x => x.Id != "0");
 
         var resp2 = await _http.GetStringAsync(_url + $"/user/collect/songlist?id={userIdentifier}");
         var j2 = JsonNode.Parse(resp2)!;
         if (j2["result"]!.GetValue<int>() != 100)
-            throw new Exception($"Unable to get user collected playlist, user identifier: {userIdentifier}");
+            throw new Exception($"Unable to get user collected playlist, message: ${resp2}");
         var playlists2 = j2["data"]!["list"]!.AsArray()
             .Select(x => new PlayList(
                 x!["dissid"]!.GetValue<long>().ToString(),
-                x!["dissname"]!.GetValue<string>())).ToArray();
+                x!["dissname"]!.GetValue<string>()));
 
-        return playlists1.Concat(playlists2).ToArray();
+        return playlists1.Concat(playlists2);
     }
 
     public async Task<IEnumerable<Music>> GetMusicsByPlaylistAsync(string id, int offset = 0)
@@ -118,14 +118,14 @@ public class QQMusicApi : IMusicApi
         var resp = await _http.GetStringAsync(_url + $"/songlist?id={id}");
         var j = JsonNode.Parse(resp)!;
         if (j["result"]!.GetValue<int>() != 100)
-            throw new Exception($"Unable to get playlist musics, playlist id: {id}.");
+            throw new Exception($"Unable to get playlist musics, message: {resp}");
         var musics = j["data"]!["songlist"]!.AsArray()
             .Select(x =>
             {
                 var artists = x!["singer"]!.AsArray().Select(y => y!["name"]!.GetValue<string>()).ToArray();
                 return new Music(x["songmid"]!.GetValue<string>() + ',' + x["strMediaMid"]!.GetValue<string>(),
                     x["songorig"]!.GetValue<string>(), artists);
-            }).ToArray();
-        return musics.Skip(offset).Take(10).ToArray();
+            });
+        return musics.Skip(offset).Take(10);
     }
 }

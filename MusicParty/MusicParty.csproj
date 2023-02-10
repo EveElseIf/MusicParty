@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\BilibiliApi\BilibiliApi.csproj" />
       <ProjectReference Include="..\MusicApiContract\MusicApiContract.csproj" />
       <ProjectReference Include="..\NeteaseCloudMusicApi\NeteaseCloudMusicApi.csproj" />
       <ProjectReference Include="..\QQMusicApi\QQMusicApi.csproj" />

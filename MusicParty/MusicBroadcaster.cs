@@ -45,7 +45,13 @@ public class MusicBroadcaster
                     {
                         try
                         {
-                            NowPlaying = (await ma!.GetPlayableMusicAsync(musicOrder.Music), musicOrder.EnqueuerId);
+                            var music = await ma!.GetPlayableMusicAsync(musicOrder.Music);
+                            NowPlaying = (music, musicOrder.EnqueuerId);
+                            if (music.NeedProxy)
+                            {
+                                await MusicProxyMiddleware.StartProxyAsync(music.TargetUrl!, music.Referer!);
+                            }
+
                             NowPlayingStartedTime = DateTime.Now;
                             await SetNowPlaying(NowPlaying.Value.music,
                                 _userManager.FindUserById(musicOrder.EnqueuerId)!.Name);

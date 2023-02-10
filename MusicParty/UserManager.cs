@@ -55,6 +55,9 @@ public class UserManager
     {
         var user = FindUserById(id);
         if (user is null) throw new ArgumentException($"No user whose id is {id}.", nameof(id));
-        user.MusicApiServiceBindings.Add(apiName, identifier);
+        if (user.MusicApiServiceBindings.ContainsKey(apiName))
+            user.MusicApiServiceBindings[apiName] = identifier;
+        else
+            user.MusicApiServiceBindings.Add(apiName, identifier);
     }
 }

@@ -6,7 +6,7 @@ export const Playlist = (props: { id: string, name: string, apiName: string, enq
     const [loaded, setLoaded] = useState(false);
     const [musics, setMusics] = useState<Music[]>([]);
     const [canshow, setCanshow] = useState(false);
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         if (!loaded) return;
@@ -30,7 +30,7 @@ export const Playlist = (props: { id: string, name: string, apiName: string, enq
         </h2>
         <AccordionPanel pb={4}>
             <Skeleton isLoaded={canshow}>
-                {musics.length > 0 || musics.length === 0 && page != 0 ?
+                {musics.length > 0 || musics.length === 0 && page != 1 ?
                     <Stack>
                         <Divider />
                         <List spacing={2}>
@@ -50,7 +50,7 @@ export const Playlist = (props: { id: string, name: string, apiName: string, enq
                             <Flex alignItems={"center"}>
                                 {`page ${page}`}
                             </Flex>
-                            <Button colorScheme={"teal"} ml={4} onClick={() => setPage(o => o > 0 ? o - 1 : 0)}>
+                            <Button colorScheme={"teal"} ml={4} onClick={() => setPage(o => o > 1 ? o - 1 : 1)}>
                                 Prev
                             </Button>
                             <Button colorScheme={"teal"} ml={4} onClick={() => setPage(o => o + 1)}>

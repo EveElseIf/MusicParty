@@ -82,7 +82,7 @@ public class ApiController : ControllerBase
             return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
         if (string.IsNullOrEmpty(id))
             return BadRequest("Id cannot be null".BuildResponseMessageWithCode(3));
-        var musics = await ma!.GetMusicsByPlaylistAsync(id, page * 10);
+        var musics = await ma!.GetMusicsByPlaylistAsync(id, (page - 1) * 10);
         return Ok(musics);
     }
 

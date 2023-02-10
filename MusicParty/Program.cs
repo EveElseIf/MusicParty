@@ -2,6 +2,7 @@ using AspNetCore.Proxy;
 using MusicParty;
 using MusicParty.Hub;
 using MusicParty.MusicApi;
+using MusicParty.MusicApi.Bilibili;
 using MusicParty.MusicApi.NeteaseCloudMusic;
 using MusicParty.MusicApi.QQMusic;
 
@@ -39,6 +40,16 @@ if (bool.Parse(builder.Configuration["MusicApi:QQMusic:Enabled"]))
     musicApiList.Add(api);
 }
 
+if (bool.Parse(builder.Configuration["MusicApi:Bilibili:Enabled"]))
+{
+    var api = new BilibiliApi(
+        builder.Configuration["MusicApi:Bilibili:SESSDATA"],
+        builder.Configuration["MusicApi:Bilibili:PhoneNo"]
+    );
+    api.Login();
+    musicApiList.Add(api);
+}
+
 // Add more music api provider in the future.
 if (musicApiList.Count == 0)
     throw new Exception("Cannot start without any music api service.");
@@ -72,6 +83,8 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllers();
     endpoints.MapHub<MusicHub>("/music");
 });
+
+app.UseMusicProxy();
 
 // Proxy the front end server.
 app.RunHttpProxy(builder.Configuration["FrontEndUrl"]);
