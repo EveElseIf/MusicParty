@@ -49,7 +49,9 @@ public class MusicBroadcaster
                             NowPlaying = (music, musicOrder.EnqueuerId);
                             if (music.NeedProxy)
                             {
-                                await MusicProxyMiddleware.StartProxyAsync(music.TargetUrl!, music.Referer!);
+                                await MusicProxyMiddleware.StartProxyAsync(new MusicProxyRequest(music.TargetUrl!,
+                                    "audio/mp4", music.Referer,
+                                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 Edg/109.0.1518.78"));
                             }
 
                             NowPlayingStartedTime = DateTime.Now;

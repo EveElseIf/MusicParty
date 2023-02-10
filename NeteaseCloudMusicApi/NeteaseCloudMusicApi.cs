@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using QRCoder;
 using SixLabors.ImageSharp;
@@ -11,15 +12,13 @@ public class NeteaseCloudMusicApi : IMusicApi
     private readonly HttpClient _http = new();
     private readonly string _url;
     private readonly string _phoneNo;
-    private readonly string _password;
-    private readonly bool _smsLogin;
+    private readonly string _cookie;
 
-    public NeteaseCloudMusicApi(string url, string phoneNo, string password, bool smsLogin)
+    public NeteaseCloudMusicApi(string url, string phoneNo, string cookie)
     {
         _url = url;
         _phoneNo = phoneNo;
-        _password = password;
-        _smsLogin = smsLogin;
+        _cookie = cookie;
     }
 
     public string ServiceName => "NeteaseCloudMusic";
@@ -27,37 +26,34 @@ public class NeteaseCloudMusicApi : IMusicApi
     public void Login()
     {
         Console.WriteLine("You are going to login your Netease Cloud Music Account...");
-        if (string.IsNullOrEmpty(_phoneNo))
-        {
-            throw new LoginException(
-                "The phone number of your Netease Cloud Music Account is null, please set it in appsettings.json");
-        }
 
         if (File.Exists("cookie.txt"))
         {
             Console.WriteLine("You have logged in before, if you want to login again, please delete cookie.txt.");
-            _http.DefaultRequestHeaders.Add("Cookie", File.ReadAllLines("cookie.txt"));
+            _http.DefaultRequestHeaders.Add("Cookie", File.ReadAllText("cookie.txt"));
         }
         else
         {
-            List<string> cookies;
+            string cookie;
             try
             {
-                if (_smsLogin)
+                if (!string.IsNullOrEmpty(_cookie))
                 {
-                    Console.WriteLine("Using sms to login...");
-                    cookies = CaptchaLogin(_url, _phoneNo).ToList();
-                }
-                else if (!string.IsNullOrEmpty(_password))
-                {
-                    Console.WriteLine(
-                        "Notice: if you want to use QR code login, keep your password empty in appsettings.json.");
-                    Console.WriteLine("Using password to login... ");
-                    cookies = PasswordLogin(_url, _phoneNo, _password).ToList();
+                    cookie = _cookie;
+                    if (!CheckCookieAsync(_cookie).Result)
+                        throw new LoginException("Login failed, check your cookie.");
                 }
                 else
                 {
-                    cookies = QRCodeLogin(_url).ToList();
+                    if (string.IsNullOrEmpty(_phoneNo))
+                    {
+                        throw new LoginException(
+                            "The phone number of your Netease Cloud Music Account is null, please set it in appsettings.json");
+                    }
+
+                    var cookies = QRCodeLogin(_phoneNo);
+                    cookie = string.Join(';', cookies);
+                    _http.DefaultRequestHeaders.Add("Cookie", cookie);
                 }
             }
             catch (Exception ex)
@@ -65,43 +61,19 @@ public class NeteaseCloudMusicApi : IMusicApi
                 throw new LoginException("Login failed.", ex);
             }
 
-            _http.DefaultRequestHeaders.Add("Cookie", cookies);
-            File.WriteAllLines("cookie.txt", cookies);
+            File.WriteAllText("cookie.txt", cookie);
         }
 
         Console.WriteLine("Login success!");
     }
 
-    private IEnumerable<string> PasswordLogin(string url, string phoneNo, string password)
+    private async Task<bool> CheckCookieAsync(string cookie)
     {
-        var req = _http.GetAsync(url + $"/login/cellphone?phone={phoneNo}&password={password}").Result;
-        req.EnsureSuccessStatusCode();
-        return req.Headers.GetValues("Set-Cookie");
-    }
-
-    private IEnumerable<string> CaptchaLogin(string url, string phoneNo)
-    {
-        _http.GetAsync(url + $"/captcha/sent?phone={phoneNo}").Result.EnsureSuccessStatusCode();
-        string captcha;
-        while (true)
-        {
-            Console.WriteLine("Please enter your captcha:");
-            captcha = Console.ReadLine() ?? "";
-            var req = _http.GetAsync(url + $"/captcha/verify?phone={phoneNo}&captcha={captcha}").Result;
-            try
-            {
-                req.EnsureSuccessStatusCode();
-                break;
-            }
-            catch
-            {
-                Console.WriteLine("Captcha wrong, please retry.");
-            }
-        }
-
-        var req2 = _http.GetAsync(url + $"/login/cellphone?phone={phoneNo}&captcha={captcha}").Result;
-        req2.EnsureSuccessStatusCode();
-        return req2.Headers.GetValues("Set-Cookie");
+        var http = new HttpClient();
+        http.DefaultRequestHeaders.Add("Cookie", cookie);
+        var resp = await http.GetStringAsync($"{_url}/user/account?timestamp={GetTimestamp()}");
+        var j = JsonNode.Parse(resp)!;
+        return j["profile"].Deserialize<object>() is not null;
     }
 
     private IEnumerable<string> QRCodeLogin(string url)
@@ -169,6 +141,16 @@ public class NeteaseCloudMusicApi : IMusicApi
         var url = (string)j["data"]![0]!["url"]!;
         var length = (long)j["data"]![0]!["time"]!;
         return new PlayableMusic(music) { Url = url.Replace("http", "https"), Length = length };
+    }
+
+    public async Task<bool> TrySetCredentialAsync(string cred)
+    {
+        if (!await CheckCookieAsync(cred))
+            return false;
+        _http.DefaultRequestHeaders.Remove("Cookie");
+        _http.DefaultRequestHeaders.Add("Cookie", cred);
+        await File.WriteAllTextAsync("cookie.txt", cred);
+        return true;
     }
 
     public async Task<Music> GetMusicByIdAsync(string id)

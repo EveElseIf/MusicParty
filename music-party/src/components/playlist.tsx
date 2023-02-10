@@ -18,7 +18,7 @@ export const Playlist = (props: { id: string, name: string, apiName: string, enq
             <AccordionButton onClick={async () => {
                 if (loaded) return;
                 else setLoaded(true);
-                const musics = await getMusicsByPlaylist(props.id, 0, props.apiName);
+                const musics = await getMusicsByPlaylist(props.id, 1, props.apiName);
                 setMusics(musics);
                 setCanshow(true);
             }}>
@@ -63,5 +63,5 @@ export const Playlist = (props: { id: string, name: string, apiName: string, enq
                 }
             </Skeleton>
         </AccordionPanel>
-    </AccordionItem>)
+    </AccordionItem>);
 }

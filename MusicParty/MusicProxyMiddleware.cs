@@ -7,6 +7,7 @@ public class MusicProxyMiddleware
     private static long _currentLength;
     private static byte[]? _currentBuf;
     private static long _read;
+    private static string? _currentMimeType;
     private readonly RequestDelegate _next;
 
     public MusicProxyMiddleware(RequestDelegate next)
@@ -28,7 +29,8 @@ public class MusicProxyMiddleware
             return;
         }
 
-        context.Response.ContentType = "audio/mp4";
+        if (_currentMimeType is not null)
+            context.Response.ContentType = _currentMimeType;
 
         long start = 0;
         long end = _currentLength - 1;
@@ -80,15 +82,20 @@ public class MusicProxyMiddleware
         await context.Response.CompleteAsync();
     }
 
-    public static async Task StartProxyAsync(string url, string referer)
+    public static async Task StartProxyAsync(MusicProxyRequest req)
     {
         _tokenSource.Cancel();
         _tokenSource.Dispose();
         _tokenSource = new CancellationTokenSource();
-        var message = new HttpRequestMessage(HttpMethod.Get, url);
-        message.Headers.Referrer = new Uri(referer);
-        message.Headers.UserAgent.ParseAdd("Mozilla/5.0");
-        message.Headers.Host = new Uri(url).Host;
+
+        _currentMimeType = req.MimeType;
+
+        var message = new HttpRequestMessage(HttpMethod.Get, req.Url);
+        if (req.Referer is not null)
+            message.Headers.Referrer = new Uri(req.Referer);
+        message.Headers.UserAgent.ParseAdd(req.UserAgent ?? "Mozilla/5.0");
+        message.Headers.Host = new Uri(req.Url).Host;
+
         var resp = await _http.SendAsync(message);
         _currentLength = long.Parse(resp.Content.Headers.GetValues("Content-Length").First());
         _currentBuf = new byte[_currentLength];
@@ -114,6 +121,8 @@ public class MusicProxyMiddleware
         Array.Copy(buf, 0, dest, offset, length);
     }
 }
+
+public record MusicProxyRequest(string Url, string MimeType, string? Referer, string? UserAgent);
 
 public static class MusicProxyMiddlewareExtension
 {

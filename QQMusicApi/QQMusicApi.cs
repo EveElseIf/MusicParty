@@ -1,18 +1,15 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace MusicParty.MusicApi.QQMusic;
 
 public class QQMusicApi : IMusicApi
 {
     private readonly string _url;
-    private readonly string _qqNo;
     private readonly HttpClient _http = new();
 
-    public QQMusicApi(string url, string qqNo, string cookie)
+    public QQMusicApi(string url, string cookie)
     {
         _url = url;
-        _qqNo = qqNo;
         Console.WriteLine("You are going to login your QQ music account using cookie...");
         Login(cookie).Wait();
         Console.WriteLine("Login success.");
@@ -20,26 +17,35 @@ public class QQMusicApi : IMusicApi
 
     private async Task Login(string cookie)
     {
-        if (!string.IsNullOrEmpty(cookie))
-            (await _http.PostAsync(_url + "/user/setcookie", JsonContent.Create(new { data = cookie })))
-                .EnsureSuccessStatusCode();
-        await SetCookie();
-        var resp = await _http.GetStringAsync(_url + $"/user/detail?id={_qqNo}");
-        var j = JsonNode.Parse(resp)!;
-        if (j["result"]!.GetValue<int>() == 301)
-            throw new Exception("Login failed, check your cookie.");
+        if (string.IsNullOrEmpty(cookie))
+            throw new LoginException("Set your cookie in appsettings.json");
+        if (!await CheckCookieAsync(cookie))
+            throw new LoginException("Login failed, check your cookie.");
+        _http.DefaultRequestHeaders.Add("Cookie", cookie);
     }
 
-    public async Task SetCookie()
+    private async Task<bool> CheckCookieAsync(string cookie)
     {
-        var resp = await _http.GetAsync(_url + $"/user/getcookie?id={_qqNo}");
-        resp.EnsureSuccessStatusCode();
-        if (!resp.Headers.TryGetValues("Set-Cookie", out var cookies))
-            throw new Exception("Set cookie failed, check your QQ No. in appsettings.json.");
-        _http.DefaultRequestHeaders.Add("Cookie", cookies);
+        var http = new HttpClient();
+        http.DefaultRequestHeaders.Add("Cookie", cookie);
+        var resp = await http.GetStringAsync($"{_url}/recommend/daily");
+        var j = JsonNode.Parse(resp)!;
+        return j["result"]!.GetValue<int>() != 301;
     }
 
     public string ServiceName => "QQMusic";
+
+    public async Task<bool> TrySetCredentialAsync(string cred)
+    {
+        if (await CheckCookieAsync(cred))
+        {
+            _http.DefaultRequestHeaders.Remove("Cookie");
+            _http.DefaultRequestHeaders.Add("Cookie", cred);
+            return true;
+        }
+        else
+            return false;
+    }
 
     public async Task<Music> GetMusicByIdAsync(string id)
     {

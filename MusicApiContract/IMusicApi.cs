@@ -3,6 +3,7 @@
 public interface IMusicApi
 {
     string ServiceName { get; }
+    Task<bool> TrySetCredentialAsync(string cred);
     Task<Music> GetMusicByIdAsync(string id);
     Task<IEnumerable<Music>> SearchMusicByNameAsync(string name);
     Task<PlayableMusic> GetPlayableMusicAsync(Music music);

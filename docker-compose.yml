@@ -8,8 +8,6 @@ services:
   qqmusicapi:
     build:
       dockerfile: Dockerfile-qqmusicapi
-    environment:
-      QQ: "" # don't forget this
     expose:
       - 3300
     ports:
@@ -26,9 +24,9 @@ services:
       MusicApi__NeteaseCloudMusic__Enabled: "true"
       MusicApi__NeteaseCloudMusic__ApiServerUrl: "http://neteaseapi:3000"
       MusicApi__NeteaseCloudMusic__PhoneNo: ""
+      MusicApi__NeteaseCloudMusic__Cookie: ""
       MusicApi__QQMusic__Enabled: "true"
       MusicApi__QQMusic__ApiServerUrl: "http://qqmusicapi:3300"
-      MusicApi__QQMusic__QQNo: "" # also set QQ number at line__12
       MusicApi__QQMusic__Cookie: ""
       MusicApi__Bilibili__Enabled: "true"
       MusicApi__Bilibili__SESSDATA: ""

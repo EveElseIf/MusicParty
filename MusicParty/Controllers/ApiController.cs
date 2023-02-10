@@ -76,22 +76,29 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet, Route("{apiName}/playlistmusics/{id}"), Authorize]
-    public async Task<IActionResult> PlaylistMusics(string apiName, string id, [FromQuery] int page = 0)
+    public async Task<IActionResult> PlaylistMusics(string apiName, string id, [FromQuery] int page = 1)
     {
         if (!_musicApis.TryGetMusicApi(apiName, out var ma))
             return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
         if (string.IsNullOrEmpty(id))
             return BadRequest("Id cannot be null".BuildResponseMessageWithCode(3));
+        if (page <= 0)
+            return BadRequest("You need to set page with a number in N*.".BuildResponseMessageWithCode(4));
         var musics = await ma!.GetMusicsByPlaylistAsync(id, (page - 1) * 10);
         return Ok(musics);
     }
 
-    [HttpGet, Route("resetqqmusic")]
-    public async Task<IActionResult> ResetQQMusic()
+    [HttpPost, Route("setcredential/{apiName}")]
+    public async Task<IActionResult> SetCred(string apiName, [FromBody] string? cred)
     {
-        if (!_musicApis.TryGetMusicApi("QQMusic", out var ma))
-            return BadRequest();
-        await (ma as MusicApi.QQMusic.QQMusicApi)!.SetCookie();
-        return Ok();
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
+        if (string.IsNullOrEmpty(cred))
+            return BadRequest("You need to set your credential in request body.".BuildResponseMessageWithCode(3));
+        if (await ma!.TrySetCredentialAsync(cred))
+            return Ok();
+        else
+            return
+                StatusCode(502, $"Check your credential.".BuildResponseMessageWithCode(4));
     }
 }

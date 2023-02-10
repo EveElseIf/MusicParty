@@ -10,10 +10,13 @@ export const MyPlaylist = (props: { apis: string[], enqueue: (id: string, apiNam
     const [needBind, setNeedBind] = useState(false);
     const [apiName, setApiName] = useState("");
     const [playlistCache, setPlaylistCache] = useState<Map<string, api.Playlist[]>>(new Map<string, api.Playlist[]>());
+    const [someHook, setSomeHook] = useState(0);
+    const [apis, setApis] = useState<string[]>([]);
     const t = useToast();
 
     useEffect(() => {
         api.getBindInfo().then((info: { key: string, value: string }[]) => {
+            setApis(info.map(x => x.key));
             if (info.length > 0) {
                 const defaultApi = info[0].key;
                 setApiName(defaultApi);
@@ -22,15 +25,17 @@ export const MyPlaylist = (props: { apis: string[], enqueue: (id: string, apiNam
                 setCanshow(true);
             }
         });
-    }, [props.apis]);
+    }, []);
 
     useEffect(() => {
         if (!apiName) return;
         if (playlistCache.has(apiName)) {
             setPlaylists(playlistCache.get(apiName)!);
+            setSomeHook(n => n + 1);
         } else {
             api.getMyPlaylist(apiName).then(resp => {
                 setPlaylists(resp);
+                setSomeHook(n => n + 1);
                 setCanshow(true);
                 setPlaylistCache(c => c.set(apiName, resp));
             }).catch(err => {
@@ -54,14 +59,14 @@ export const MyPlaylist = (props: { apis: string[], enqueue: (id: string, apiNam
                             <Select ml={2} flex={1} onChange={e => {
                                 setApiName(e.target.value);
                             }} defaultValue={apiName}>
-                                {props.apis.map(a => {
+                                {apis.map(a => {
                                     return <option key={a}>
                                         {a}
                                     </option>;
                                 })}
                             </Select>
                         </Flex>
-                        <Accordion allowMultiple>
+                        <Accordion allowMultiple key={someHook}>
                             {playlists.map(p =>
                                 <Playlist key={p.id} id={p.id} name={p.name} apiName={apiName} enqueue={props.enqueue} />
                             )}

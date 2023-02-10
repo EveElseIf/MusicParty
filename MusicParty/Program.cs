@@ -23,8 +23,7 @@ if (bool.Parse(builder.Configuration["MusicApi:NeteaseCloudMusic:Enabled"]))
     var api = new NeteaseCloudMusicApi(
         builder.Configuration["MusicApi:NeteaseCloudMusic:ApiServerUrl"],
         builder.Configuration["MusicApi:NeteaseCloudMusic:PhoneNo"],
-        builder.Configuration["MusicApi:NeteaseCloudMusic:Password"],
-        bool.Parse(builder.Configuration["MusicApi:NeteaseCloudMusic:SMSLogin"])
+        builder.Configuration["MusicApi:NeteaseCloudMusic:Cookie"]
     );
     api.Login();
     musicApiList.Add(api);
@@ -34,7 +33,6 @@ if (bool.Parse(builder.Configuration["MusicApi:QQMusic:Enabled"]))
 {
     var api = new QQMusicApi(
         builder.Configuration["MusicApi:QQMusic:ApiServerUrl"],
-        builder.Configuration["MusicApi:QQMusic:QQNo"],
         builder.Configuration["MusicApi:QQMusic:Cookie"]
     );
     musicApiList.Add(api);
