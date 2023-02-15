@@ -51,7 +51,7 @@ public class NeteaseCloudMusicApi : IMusicApi
                             "The phone number of your Netease Cloud Music Account is null, please set it in appsettings.json");
                     }
 
-                    var cookies = QRCodeLogin(_phoneNo);
+                    var cookies = QRCodeLogin(_url);
                     cookie = string.Join(';', cookies);
                     _http.DefaultRequestHeaders.Add("Cookie", cookie);
                 }
