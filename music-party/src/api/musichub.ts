@@ -36,7 +36,7 @@ export class Connection {
     this._conn.on("GlobalMessage", globalMessage);
     this._conn.on("Abort", abort);
     this._conn.onclose((e) => {
-      alert(`You are disconnected, please refresh the page.\nmessage: ${e}`);
+      alert(`您已断开连接，请刷新页面重连\n错误信息：${e}`);
     });
   }
   public async start(): Promise<any> {
