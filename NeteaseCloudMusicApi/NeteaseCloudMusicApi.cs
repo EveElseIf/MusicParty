@@ -134,7 +134,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<PlayableMusic> GetPlayableMusicAsync(Music music)
     {
-        var resp = await _http.GetStringAsync(_url + $"/song/url/v1?id={music.Id}&level=exhigh");
+        var resp = await _http.GetStringAsync(_url + $"/song/url?id={music.Id}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to get playable music, message: {resp}");
