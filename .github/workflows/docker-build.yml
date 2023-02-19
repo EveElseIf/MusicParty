@@ -15,4 +15,4 @@ jobs:
         with:
           file: Dockerfile-backend
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/musicparty-backend:latest
-          pull: true
+          push: true
