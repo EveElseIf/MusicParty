@@ -1,4 +1,6 @@
 # Music Party
+## No Chinese?
+别急，主要是因为输代码懒得切中文，所以有空再写。
 ## How to Build
 This repo contains the front-end project and the back-end projects (including music api projects).
 ### Requirements

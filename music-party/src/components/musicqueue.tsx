@@ -33,7 +33,7 @@ export const MusicQueue = (props: {
                   <Box flex={1}>
                     {v.music.name} - {v.music.artists}
                     <Text fontSize={'sm'} fontStyle={'italic'}>
-                      由 {v.enqueuerName} 加入队列
+                      由 {v.enqueuerName} 点歌
                     </Text>
                   </Box>
                   {props.queue.findIndex((x) => x.actionId === v.actionId) !==
@@ -43,9 +43,7 @@ export const MusicQueue = (props: {
                         onClick={() => props.top(v.actionId)}
                         aria-label={'置顶'}
                         icon={<TriangleUpIcon />}
-                      >
-                        置顶
-                      </IconButton>
+                      />
                     </Tooltip>
                   )}
                 </Flex>
@@ -54,10 +52,10 @@ export const MusicQueue = (props: {
           ) : (
             <Text size={'md'}>
               <Highlight
-                query={'加入歌曲'}
+                query={'点歌'}
                 styles={{ px: '2', py: '1', rounded: 'full', bg: 'teal.100' }}
               >
-                播放队列为空，请随意向队列中加入歌曲吧~
+                播放队列为空，请随意点歌吧~
               </Highlight>
             </Text>
           )}

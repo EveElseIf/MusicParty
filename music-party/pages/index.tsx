@@ -153,7 +153,7 @@ export default function Home() {
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={'2fr 5fr'} gap='1'>
       <Head>
-        <title>🎶 音趴 🎶</title>
+        <title>🎵 音趴 🎵</title>
         <meta name='description' content='享受音趴！' />
         <link rel='icon' href='/favicon.ico' />
         <meta name='referrer' content='never' />
@@ -162,7 +162,7 @@ export default function Home() {
         <Stack m={4} spacing={4}>
           <Card>
             <CardHeader>
-              <Heading>{`欢淫, ${userName}!`}</Heading>
+              <Heading>{`欢迎, ${userName}!`}</Heading>
             </CardHeader>
             <CardBody>
               <Stack>
@@ -170,12 +170,12 @@ export default function Home() {
                   {({ onClose }) => (
                     <>
                       <PopoverTrigger>
-                        <Button>改名</Button>
+                        <Button>修改名字</Button>
                       </PopoverTrigger>
                       <Portal>
                         <PopoverContent>
                           <PopoverArrow />
-                          <PopoverHeader>改名</PopoverHeader>
+                          <PopoverHeader>修改名字</PopoverHeader>
                           <PopoverCloseButton />
                           <PopoverBody>
                             <Input
@@ -232,6 +232,13 @@ export default function Home() {
                   flex={1}
                   value={chatToSend}
                   onChange={(e) => setChatToSend(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      if (chatToSend === '') return;
+                      await conn.current?.chatSay(chatToSend);
+                      setChatToSend('');
+                    }
+                  }}
                 />
                 <Button
                   ml={2}
@@ -260,7 +267,7 @@ export default function Home() {
         <Tabs>
           <TabList>
             <Tab>播放列表</Tab>
-            <Tab>从音乐 ID 点歌</Tab>
+            <Tab>从音乐ID点歌</Tab>
             <Tab>从歌单点歌</Tab>
           </TabList>
           <TabPanels>
@@ -272,7 +279,7 @@ export default function Home() {
                       {`正在播放:\n ${nowPlaying?.music.name} - ${nowPlaying?.music.artists}`}
                     </Heading>
                     <Text size={'md'} fontStyle={'italic'} ml={2}>
-                      {`由 ${nowPlaying?.enqueuer} 点播`}
+                      {`由 ${nowPlaying?.enqueuer} 点歌`}
                     </Text>
                   </>
                 ) : (

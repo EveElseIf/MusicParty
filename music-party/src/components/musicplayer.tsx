@@ -82,11 +82,11 @@ export const MusicPlayer = (props: {
             }}
           />
         </Tooltip>
-        <Tooltip hasArrow label={"下一首"}>
+        <Tooltip hasArrow label={"切歌"}>
           <IconButton
             flex={1}
             icon={<ArrowRightIcon />}
-            aria-label={"下一首"}
+            aria-label={"切歌"}
             onClick={props.nextClick}
           />
         </Tooltip>
@@ -108,7 +108,6 @@ export const MusicPlayer = (props: {
                 colorScheme={"blue"}
                 onClick={() => {
                   audio.current?.play();
-                  audio.current?.pause();
                   props.reset();
                   onClose();
                 }}

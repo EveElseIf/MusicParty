@@ -1,5 +1,4 @@
 import {
-  Text,
   Button,
   Drawer,
   DrawerBody,
@@ -10,13 +9,11 @@ import {
   DrawerOverlay,
   Flex,
   Input,
-  List,
-  ListItem,
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
 import React, { useState } from 'react';
-import { bindAccount, MusicServiceUser, searchUsers } from '../api/api';
+import { bindAccount } from '../api/api';
 
 export const QQMusicBinder = (props: {}) => {
   const { isOpen, onOpen, onClose } = useDisclosure();

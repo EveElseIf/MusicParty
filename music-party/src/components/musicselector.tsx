@@ -57,7 +57,7 @@ export const MusicSelector = (props: { apis: string[]; conn: Connection }) => {
                 });
           }}
         >
-          加入队列
+          点歌
         </Button>
       </Flex>
     </>

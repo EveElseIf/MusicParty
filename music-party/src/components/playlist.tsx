@@ -71,7 +71,7 @@ export const Playlist = (props: {
                           props.enqueue(m.id, props.apiName);
                         }}
                       >
-                        加入队列
+                        点歌
                       </Button>
                     </Flex>
                   </ListItem>
@@ -97,7 +97,7 @@ export const Playlist = (props: {
               </Flex>
             </Stack>
           ) : (
-            <Text>啊咧，这个歌单怎么是空的？</Text>
+            <Text>歌单为空</Text>
           )}
         </Skeleton>
       </AccordionPanel>
