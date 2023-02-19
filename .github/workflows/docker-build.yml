@@ -1,7 +1,7 @@
 name: docker-build
 on: [push]
 jobs:
-  build-and-push:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -10,9 +10,45 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Docker Build and Push
+      - name: Build and Push
         uses: docker/build-push-action@v4.0.0
         with:
           file: Dockerfile-backend
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/musicparty-backend:latest
+          push: true
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Docker Login
+        uses: docker/login-action@v2.1.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v4.0.0
+        with:
+          file: Dockerfile-frontend
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/musicparty-frontend:latest
+          push: true
+  music-api-servers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Docker Login
+        uses: docker/login-action@v2.1.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push neteaseapi
+        uses: docker/build-push-action@v4.0.0
+        with:
+          file: Dockerfile-neteaseapi
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/musicparty-neteaseapi:latest
+          push: true
+      - name: Build and Push qqmusicapi
+        uses: docker/build-push-action@v4.0.0
+        with:
+          file: Dockerfile-qqmusicapi
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/musicparty-qqmusicapi:latest
           push: true
