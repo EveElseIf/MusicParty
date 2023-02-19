@@ -1,23 +1,19 @@
 version: "3.9"
 services:
   neteaseapi:
-    build:
-      dockerfile: Dockerfile-neteaseapi
+    image: limeve/musicparty-neteaseapi:latest
     expose:
       - 3000
   qqmusicapi:
-    build:
-      dockerfile: Dockerfile-qqmusicapi
+    image: limeve/musicparty-qqmusicapi:latest
     expose:
       - 3300
   frontend:
-    build:
-      dockerfile: Dockerfile-frontend
+    image: limeve/musicparty-frontend:latest
     expose:
       - 3000
   backend:
-    build:
-      dockerfile: Dockerfile-backend
+    image: limeve/musicparty-backend:latest
     environment:
       MusicApi__NeteaseCloudMusic__Enabled: "true"
       MusicApi__NeteaseCloudMusic__ApiServerUrl: "http://neteaseapi:3000"
