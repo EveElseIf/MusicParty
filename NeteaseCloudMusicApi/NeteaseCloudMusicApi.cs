@@ -51,7 +51,7 @@ public class NeteaseCloudMusicApi : IMusicApi
                             "The phone number of your Netease Cloud Music Account is null, please set it in appsettings.json");
                     }
 
-                    var cookies = QRCodeLogin(_phoneNo);
+                    var cookies = QRCodeLogin(_url);
                     cookie = string.Join(';', cookies);
                     _http.DefaultRequestHeaders.Add("Cookie", cookie);
                 }
@@ -134,7 +134,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<PlayableMusic> GetPlayableMusicAsync(Music music)
     {
-        var resp = await _http.GetStringAsync(_url + $"/song/url/v1?id={music.Id}&level=exhigh");
+        var resp = await _http.GetStringAsync(_url + $"/song/url?id={music.Id}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to get playable music, message: {resp}");
