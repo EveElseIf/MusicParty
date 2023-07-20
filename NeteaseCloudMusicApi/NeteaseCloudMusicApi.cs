@@ -9,7 +9,7 @@ namespace MusicParty.MusicApi.NeteaseCloudMusic;
 
 public class NeteaseCloudMusicApi : IMusicApi
 {
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http = new HttpClient(new HttpClientHandler() { UseCookies = false });
     private readonly string _url;
     private readonly string _phoneNo;
     private readonly string _cookie;
