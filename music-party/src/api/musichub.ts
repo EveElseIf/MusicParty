@@ -48,6 +48,9 @@ export class Connection {
   public async enqueueMusic(id: string, apiName: string): Promise<void> {
     await this._conn.invoke("EnqueueMusic", id, apiName);
   }
+  public async enqueueMusicName(name: string, apiName: string): Promise<void> {
+    await this._conn.invoke("EnqueueMusic", name, apiName);
+  }
   public async requestSetNowPlaying(): Promise<void> {
     await this._conn.invoke("RequestSetNowPlaying");
   }
