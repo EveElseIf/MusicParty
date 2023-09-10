@@ -67,6 +67,20 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 
     #region Remote invokable
 
+    public async Task SearchMusic(string songName, string apiName)
+    {
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            throw new HubException($"Unknown api provider {apiName}.");
+        try
+        {
+            var music = await ma!.SearchMusicByNameAsync(apiName,songName);
+            await _musicBroadcaster.EnqueueMusic(music[0], apiName, Context.User!.Identity!.Name!);
+        }
+        catch (Exception ex)
+        {
+            throw new HubException($"Failed to search music, name: {songName}", ex);
+        }
+    }
     public async Task EnqueueMusic(string id, string apiName)
     {
         if (!_musicApis.TryGetMusicApi(apiName, out var ma))
