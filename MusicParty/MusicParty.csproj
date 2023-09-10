@@ -8,6 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="KuWoApi\**" />
+      <Content Remove="KuWoApi\**" />
+      <EmbeddedResource Remove="KuWoApi\**" />
+      <None Remove="KuWoApi\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="AspNetCore.Proxy" Version="4.4.0" />
         <PackageReference Include="QRCoder" Version="1.4.3" />
         <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />

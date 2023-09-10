@@ -1,3 +1,4 @@
+
 export async function getProfile(): Promise<User> {
   const resp = await fetch("/api/profile");
   const j = await resp.json();
@@ -45,6 +46,21 @@ export async function getMusicsByPlaylist(
 ): Promise<Music[]> {
   const resp = await fetch(`/api/${apiName}/playlistmusics/${id}?page=${page}`);
   const j = await resp.json();
+  return j;
+}
+
+export async function getMusicsByMusicName(
+  MusicName: string,
+  apiName: string
+): Promise<Music[]> {
+  var js;
+  var apis="";
+  apis=`/api/${apiName}/search/${MusicName}`;
+  const resp = await fetch(apis.toString()+`${MusicName}`);
+  js = await resp.json();
+  var j;
+  if (apiName=="NeteaseCloudMusic"){j=js.result.songs;}
+  if (apiName=="Bilibili"){j=js;}
   return j;
 }
 

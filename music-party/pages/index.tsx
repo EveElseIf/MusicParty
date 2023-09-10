@@ -40,6 +40,7 @@ import { NeteaseBinder } from '../src/components/neteasebinder';
 import { MyPlaylist } from '../src/components/myplaylist';
 import { toastEnqueueOk, toastError, toastInfo } from '../src/utils/toast';
 import { MusicSelector } from '../src/components/musicselector';
+import { MusicSearchor } from '../src/components/musicsearch';
 import { QQMusicBinder } from '../src/components/qqmusicbinder';
 import { MusicQueue } from '../src/components/musicqueue';
 import { BilibiliBinder } from '../src/components/bilibilibinder';
@@ -67,6 +68,9 @@ export default function Home() {
 
   const conn = useRef<Connection>();
   useEffect(() => {
+    if (chatContent.length>=5) {
+      chatContent.pop();
+    }
     if (!conn.current) {
       conn.current = new Connection(
         `${window.location.origin}/music`,
@@ -93,6 +97,7 @@ export default function Home() {
           });
         },
         async (operatorName: string, _) => {
+          console.log(operatorName);
           toastInfo(t, `${operatorName} 切到了下一首歌`);
         },
         async (id: string, name: string) => {
@@ -246,14 +251,16 @@ export default function Home() {
                     if (chatToSend === '') return;
                     await conn.current?.chatSay(chatToSend);
                     setChatToSend('');
+                      
+                    
                   }}
                 >
                   发送
                 </Button>
               </Flex>
-              <UnorderedList>
-                {chatContent.map((s) => (
-                  <ListItem key={Math.random() * 1000}>
+              <UnorderedList style={{height:200}}>
+                {chatContent.slice(-7).map((s) => (
+                  <ListItem>
                     {`${s.name}: ${s.content}`}
                   </ListItem>
                 ))}
@@ -267,8 +274,10 @@ export default function Home() {
         <Tabs>
           <TabList>
             <Tab>播放列表</Tab>
+            <Tab>聚合音乐搜索</Tab>
             <Tab>从音乐ID点歌</Tab>
             <Tab>从歌单点歌</Tab>
+            <Tab>ToDo List</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -310,6 +319,9 @@ export default function Home() {
               />
             </TabPanel>
             <TabPanel>
+              <MusicSearchor apis={apis} conn={conn.current!} />
+            </TabPanel>
+            <TabPanel>
               <MusicSelector apis={apis} conn={conn.current!} />
             </TabPanel>
             <TabPanel>
@@ -331,9 +343,36 @@ export default function Home() {
                 />
               )}
             </TabPanel>
+            <TabPanel>
+              <Text>
+                  1.酷我api点歌(快写好了快写好了)<br></br>
+                  2.酷我api搜索(脑子炸了脑子炸了)<br></br>
+                  2.5.跟我骂：脑瘫酷我<br></br>
+                  3.网易api搜索(√)<br></br>
+                  4.bilibiliapi搜索(√)<br></br>
+                  5.歌单管理（不计划）<br></br>
+                  6.手动切歌(?)<br></br>
+                  7.不做了草拟吗<br></br>
+                  8.更多源支持<br></br>
+                  9.chat重写（现在看来不算太卡）<br></br>
+                  10.紫砂<br></br>
+                  11.紫砂<br></br>
+                  12.css美化<br></br>
+                  13.手机端界面支持<br></br>
+                  14.打游戏！<br></br>
+                  15.设置<br></br>
+                  16.音量<br></br>
+                  17.streamer重写(暂定16前提)<br></br>
+                  18.相似<br></br>
+                  18.变异<br></br>
+                  （扭曲的爬行）<br></br>
+                  （6）<br></br>
+              </Text>
+            </TabPanel>
           </TabPanels>
         </Tabs>
       </GridItem>
     </Grid>
   );
 }
+

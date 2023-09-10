@@ -5,6 +5,7 @@ using MusicParty.MusicApi;
 using MusicParty.MusicApi.Bilibili;
 using MusicParty.MusicApi.NeteaseCloudMusic;
 using MusicParty.MusicApi.QQMusic;
+using KuWoMusicApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,15 @@ if (bool.Parse(builder.Configuration["MusicApi:QQMusic:Enabled"]))
     var api = new QQMusicApi(
         builder.Configuration["MusicApi:QQMusic:ApiServerUrl"],
         builder.Configuration["MusicApi:QQMusic:Cookie"]
+    );
+    musicApiList.Add(api);
+}
+
+if (bool.Parse(builder.Configuration["MusicApi:KuWoMusic:Enabled"]))
+{
+    var api = new KuWoApi(
+        builder.Configuration["MusicApi:KuWoMusic:ApiServerUrl"],
+        builder.Configuration["MusicApi:KuWoMusic:Cookie"]
     );
     musicApiList.Add(api);
 }

@@ -74,6 +74,18 @@ public class ApiController : ControllerBase
 
         return Ok(playlists);
     }
+    
+    [HttpGet, Route("{apiName}/search/{MusicName}"), Authorize]
+    public async Task<IActionResult> SearchPlaylists(string apiName,string MusicName)
+    {
+        
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
+
+        var playlists = await ma!.SearchMusicByNameAsync(apiName, MusicName);
+
+        return Ok(playlists);
+    }
 
     [HttpGet, Route("{apiName}/playlistmusics/{id}"), Authorize]
     public async Task<IActionResult> PlaylistMusics(string apiName, string id, [FromQuery] int page = 1)

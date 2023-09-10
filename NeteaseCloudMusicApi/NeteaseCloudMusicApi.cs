@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using QRCoder;
@@ -9,7 +10,7 @@ namespace MusicParty.MusicApi.NeteaseCloudMusic;
 
 public class NeteaseCloudMusicApi : IMusicApi
 {
-    private readonly HttpClient _http = new HttpClient(new HttpClientHandler() { UseCookies = false });
+    private readonly HttpClient _http = new();
     private readonly string _url;
     private readonly string _phoneNo;
     private readonly string _cookie;
@@ -163,11 +164,37 @@ public class NeteaseCloudMusicApi : IMusicApi
         var ar = j["songs"]![0]!["ar"]!.AsArray().Select(x => x!["name"]!.GetValue<string>()).ToArray();
         return new Music(id, name, ar);
     }
-
-    public Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
+    public async Task<Music[]> SearchMusicByNameAsync(string ApiName, string SongName)
     {
-        throw new NotImplementedException();
+        //"?keywords={SongName}";
+        var resp = await _http.GetStringAsync($"https://ncm.lgc2333.top/search?keywords={SongName}");
+        var j = JsonNode.Parse(resp)!;
+        JsonArray SongList = j["result"].AsArray();
+        if ((int)j["code"]! != 200 || SongList.Count == 0)
+        {
+            throw new Exception($"Unable to search music,message: {resp}");
+        }
+        Music[] array = new Music[SongList.Count];
+        for (int i = 0; i < SongList.Count; i++)
+        {
+            
+            var id = (string)SongList["songs"]![i]!["id"]!;
+            var name = (string)j["songs"]![i]!["name"]!;
+            var ar = j["songs"]![i]!["artistis"]!.AsArray().Select(x => x!["name"]!.GetValue<string>()).ToArray();
+            array[i] = new Music(id,name,ar);
+        }
+        return array;
     }
+    /*public async Task<IEnumerable<Music>> SearchMusicByNameAsync(string name_)
+    {
+        var resp = await _http.GetStringAsync(_url + $"/search?keywords={name_}");
+        var j = JsonNode.Parse(resp)!;
+        if ((int)j["code"]! != 200 || j["songs"]!.AsArray().Count == 0)
+            throw new Exception($"Unable to get music, message: {resp}");
+        var name = (string)j["songs"]![0]!["name"]!;
+        var ar = j["songs"]![0]!["ar"]!.AsArray().Select(x => x!["name"]!.GetValue<string>()).ToArray();
+        return new Music(name_, name, ar);
+    }*/
 
     public async Task<IEnumerable<MusicServiceUser>> SearchUserAsync(string keyword)
     {

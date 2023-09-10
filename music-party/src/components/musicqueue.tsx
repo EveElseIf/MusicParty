@@ -1,4 +1,4 @@
-import { TriangleUpIcon } from '@chakra-ui/icons';
+import { TriangleUpIcon,TriangleDownIcon } from '@chakra-ui/icons';
 import {
   Text,
   Card,
@@ -14,7 +14,6 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { MusicOrderAction } from '../api/musichub';
-
 export const MusicQueue = (props: {
   queue: MusicOrderAction[];
   top: (actionId: string) => void;
@@ -46,6 +45,9 @@ export const MusicQueue = (props: {
                       />
                     </Tooltip>
                   )}
+                  
+                    
+                  
                 </Flex>
               </ListItem>
             ))
@@ -64,3 +66,7 @@ export const MusicQueue = (props: {
     </Card>
   );
 };
+function setNowPlaying(arg0: { v: MusicOrderAction; "": any; enqueuer: any; }): void {
+  throw new Error('Function not implemented.');
+}
+
