@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
+﻿using System.Data;
+using System.Text.Json;
 using System.Text.Json.Nodes;
-
+using System.Text.RegularExpressions;
 namespace MusicParty.MusicApi.Bilibili;
 
 public class BilibiliApi : IMusicApi
@@ -36,11 +37,16 @@ public class BilibiliApi : IMusicApi
 
     private async Task SESSDATALogin(string sessdata)
     {
-        if (!await CheckSESSDATAAsync(sessdata))
-            throw new LoginException($"Login failed, check your SESSDATA.");
+        //Console.WriteLine("0");
+        if (!await CheckSESSDATAAsync(sessdata)) 
+            throw new LoginException($"Login failed, check your SESSDATA."); 
+        Console.WriteLine("1");
         _http.DefaultRequestHeaders.Add("Cookie", $"SESSDATA={sessdata}");
+        Console.WriteLine("2");
         var resp2 = await _http.GetAsync("https://www.bilibili.com");
+        Console.WriteLine("3");
         var cookies = resp2.Headers.GetValues("Set-Cookie");
+        Console.WriteLine("4");
         _http.DefaultRequestHeaders.Add("Cookie", cookies);
     }
 
@@ -48,8 +54,11 @@ public class BilibiliApi : IMusicApi
     {
         var http = new HttpClient();
         http.DefaultRequestHeaders.Add("Cookie", $"SESSDATA={sessdata}");
-        var resp = await http.GetStringAsync("https://api.bilibili.com/nav");
-        var j = JsonNode.Parse(resp)!;
+        var resp = await http.GetAsync("https://api.bilibili.com/nav");
+        var resp2 = resp.Content;
+
+        Console.Write(resp2.ReadAsStringAsync().Result);
+        var j = JsonNode.Parse(resp2.ReadAsStream())!;
         return j["code"]!.GetValue<int>() == 0;
     }
 
@@ -78,10 +87,36 @@ public class BilibiliApi : IMusicApi
             throw new Exception($"Unable to get playable music, message: {resp}");
         return new Music($"{j.data.bvid},{j.data.cid}", j.data.title, new[] { j.data.owner.name });
     }
+    
+    public async Task<Music[]> SearchMusicByNameAsync(string ApiName,string SongName)
+    {   //seems not that necessary,just get it in front-end and use id to callback.
+        var target_url = $"https://api.bilibili.com/x/web-interface/search/type?__refresh__=true&_extra=&context=&page=1&page_size=42&platform=pc&highlight=1&single_column=0&category_id=&search_type=video&dynamic_offset=0&preload=true&com2co=true&keyword={SongName}";
+        //Console.Write(target_url);
+        var resp = await _http.GetStringAsync(target_url);
+        var j = JsonNode.Parse(resp)!;
+        
+        JsonArray SongList = j["data"]["result"].AsArray();
+        if ((int)j["code"]! != 0 || SongList.Count == 0)
+        {
+            throw new Exception($"Unable to search music,message: {j["code"]}");
+        }
+        Music[] array = new Music[SongList.Count];
 
-    public async Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
-    {
-        throw new NotImplementedException();
+        for (int i = 0; i < SongList.Count; i++)
+        {
+
+            var id = (string)SongList![i]!["bvid"]!;
+            string tname = (string)SongList![i]!["title"]!;
+            Regex irex = new Regex(@"/<[^>]+>/g");
+
+            var name = irex.Replace(tname, " ",1);
+            Console.Write(irex.IsMatch(tname));
+
+            string[] ar = { (string)SongList![i]!["artists"]! };
+           
+            array[i] = new Music(id, name, ar);
+        }
+        return array;
     }
 
     public async Task<PlayableMusic> GetPlayableMusicAsync(Music music)
