@@ -38,7 +38,9 @@ export const MusicSelector = (props: { apis: string[]; conn: Connection }) => {
           value={id}
           placeholder={'输入音乐 ID'}
           onChange={(e) => {
-            setId(e.target.value);
+            console.log(e);
+            if (e.target.value.toString().includes("bilibili")) {setId(e.target.value.split('/')[4]);}
+            else{setId(e.target.value);}
           }}
         />
         <Button
