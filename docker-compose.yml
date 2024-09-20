@@ -19,6 +19,7 @@ services:
       MusicApi__NeteaseCloudMusic__ApiServerUrl: "http://neteaseapi:3000"
       MusicApi__NeteaseCloudMusic__PhoneNo: ""
       MusicApi__NeteaseCloudMusic__Cookie: ""
+      MusicApi__NeteaseCloudMusic__Password: ""
       MusicApi__QQMusic__Enabled: "true"
       MusicApi__QQMusic__ApiServerUrl: "http://qqmusicapi:3300"
       MusicApi__QQMusic__Cookie: ""
