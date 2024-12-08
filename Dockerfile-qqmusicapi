@@ -4,5 +4,6 @@ RUN apt install unzip wget -y
 RUN wget https://github.com/jsososo/QQMusicApi/archive/refs/heads/master.zip
 RUN unzip master.zip
 WORKDIR /QQMusicApi-master
+RUN yarn upgrade
 RUN yarn
 ENTRYPOINT [ "yarn" , "start" ]

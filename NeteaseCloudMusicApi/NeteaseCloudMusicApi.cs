@@ -1,9 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using QRCoder;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using ZXing.ImageSharp;
+using System;
+using System.Net;
 
 namespace MusicParty.MusicApi.NeteaseCloudMusic;
 
@@ -14,11 +17,14 @@ public class NeteaseCloudMusicApi : IMusicApi
     private readonly string _phoneNo;
     private readonly string _cookie;
 
-    public NeteaseCloudMusicApi(string url, string phoneNo, string cookie)
+    private readonly string _password;
+
+    public NeteaseCloudMusicApi(string url, string phoneNo, string cookie, string password)
     {
         _url = url;
         _phoneNo = phoneNo;
         _cookie = cookie;
+        _password = password;
     }
 
     public string ServiceName => "NeteaseCloudMusic";
@@ -45,14 +51,12 @@ public class NeteaseCloudMusicApi : IMusicApi
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(_phoneNo))
+                    if (string.IsNullOrEmpty(_phoneNo) || string.IsNullOrEmpty(_password))
                     {
                         throw new LoginException(
-                            "The phone number of your Netease Cloud Music Account is null, please set it in appsettings.json");
+                            "The phone number or password of your Netease Cloud Music Account is null, please set it in appsettings.json");
                     }
-
-                    var cookies = QRCodeLogin(_url);
-                    cookie = string.Join(';', cookies);
+                    cookie = PhoneNumberLogin(_phoneNo,_password);
                     _http.DefaultRequestHeaders.Add("Cookie", cookie);
                 }
             }
@@ -67,27 +71,41 @@ public class NeteaseCloudMusicApi : IMusicApi
         Console.WriteLine("Login success!");
     }
 
+    private string GetCookieEncoded()
+    {
+        string cookie;
+        cookie = File.ReadAllText("cookie.txt");
+        cookie = WebUtility.UrlEncode(cookie);
+        return cookie;
+    }
+
     private async Task<bool> CheckCookieAsync(string cookie)
     {
         var http = new HttpClient();
         http.DefaultRequestHeaders.Add("Cookie", cookie);
-        var resp = await http.GetStringAsync($"{_url}/user/account?timestamp={GetTimestamp()}");
+        var resp = await http.GetStringAsync($"{_url}/user/account?realIP=183.232.239.22&timestamp={GetTimestamp()}");
         var j = JsonNode.Parse(resp)!;
         return j["profile"].Deserialize<object>() is not null;
     }
 
+    private string PhoneNumberLogin(string phoneNo,string password)
+    {
+        var rst = _http.GetStringAsync(_url + $"/login/cellphone?realIP=183.232.239.22&phone={phoneNo}&password={password}").Result;
+        var cookie = JsonNode.Parse(rst)!["cookie"]!.GetValue<string>();
+        return cookie;
+    }
     private IEnumerable<string> QRCodeLogin(string url)
     {
-        var keyJson = _http.GetStringAsync(url + $"/login/qr/key?timestamp={GetTimestamp()}").Result;
+        var keyJson = _http.GetStringAsync(url + $"/login/qr/key?realIP=183.232.239.22&timestamp={GetTimestamp()}").Result;
         var key = JsonNode.Parse(keyJson)!["data"]!["unikey"]!.GetValue<string>();
-        var qr = _http.GetStringAsync(url + $"/login/qr/create?key={key}&qrimg=true").Result;
+        var qr = _http.GetStringAsync(url + $"/login/qr/create?realIP=183.232.239.22&key={key}&qrimg=true").Result;
         var qrimg = JsonNode.Parse(qr)!["data"]!["qrimg"]!.GetValue<string>();
         Console.WriteLine("Scan your QR code:");
         PrintQRCode(qrimg);
         while (true)
         {
             Task.Delay(3000).Wait();
-            var req = _http.GetAsync(url + $"/login/qr/check?key={key}&timestamp={GetTimestamp()}").Result;
+            var req = _http.GetAsync(url + $"/login/qr/check?realIP=183.232.239.22&key={key}&timestamp={GetTimestamp()}").Result;
             var code = JsonNode.Parse(req.Content.ReadAsStringAsync().Result)!["code"]!.GetValue<int>();
             if (code == 800)
                 throw new Exception("Timeout.");
@@ -134,7 +152,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<PlayableMusic> GetPlayableMusicAsync(Music music)
     {
-        var resp = await _http.GetStringAsync(_url + $"/song/url?id={music.Id}");
+        var resp = await _http.GetStringAsync(_url + $"/song/url?realIP=183.232.239.22&id={music.Id}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to get playable music, message: {resp}");
@@ -155,7 +173,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<Music> GetMusicByIdAsync(string id)
     {
-        var resp = await _http.GetStringAsync(_url + $"/song/detail?ids={id}");
+        var resp = await _http.GetStringAsync(_url + $"/song/detail?realIP=183.232.239.22&ids={id}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200 || j["songs"]!.AsArray().Count == 0)
             throw new Exception($"Unable to get music, message: {resp}");
@@ -171,7 +189,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<IEnumerable<MusicServiceUser>> SearchUserAsync(string keyword)
     {
-        var resp = await _http.GetStringAsync(_url + $"/search?type=1002&keywords={keyword}");
+        var resp = await _http.GetStringAsync(_url + $"/search?realIP=183.232.239.22&type=1002&keywords={keyword}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to search user, message: {resp}");
@@ -182,7 +200,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<IEnumerable<PlayList>> GetUserPlayListAsync(string userIdentifier)
     {
-        var resp = await _http.GetStringAsync(_url + $"/user/playlist?uid={userIdentifier}");
+        var resp = await _http.GetStringAsync(_url + $"/user/playlist?realIP=183.232.239.22&uid={userIdentifier}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to get user playlist, message: ${resp}");
@@ -195,7 +213,7 @@ public class NeteaseCloudMusicApi : IMusicApi
 
     public async Task<IEnumerable<Music>> GetMusicsByPlaylistAsync(string id, int offset = 0)
     {
-        var resp = await _http.GetStringAsync(_url + $"/playlist/track/all?id={id}&limit=10&offset={offset}");
+        var resp = await _http.GetStringAsync(_url + $"/playlist/track/all?realIP=183.232.239.22&id={id}&limit=10&offset={offset}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         if ((int)j["code"]! != 200)
             throw new Exception($"Unable to get playlist musics, message: {resp}");

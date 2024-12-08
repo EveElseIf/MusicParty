@@ -23,7 +23,7 @@ Now, there are Netease Cloud Music, QQ Music and Bilibili api supports in this r
 
 Edit settings in MusicParty/appsettings.json to specify which music api you want to enable, turn the MusicApi.XXX.Enabled to false if you don't want to use it.
 
-For Netease Cloud Music and QQ Music, you need the cookie of a certain account to access the music services. For Bilibili, you need SESSDATA, just part of the cookie.
+For Netease Cloud Music and QQ Music, you need the cookie of a certain account to access the music services. Or for Netease Cloud Music, you can use phone number and password instead. For Bilibili, you need SESSDATA, just part of the cookie.
 
 If you want to use Netease Cloud Music API, start a server by running `npx NeteaseCloudMusicApi@latest`.
 
