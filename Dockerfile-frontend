@@ -1,7 +1,0 @@
-FROM node:slim
-WORKDIR /
-COPY ./music-party .
-RUN npm install -g pnpm
-RUN pnpm install
-RUN pnpm build
-ENTRYPOINT [ "pnpm" , "start" ]
