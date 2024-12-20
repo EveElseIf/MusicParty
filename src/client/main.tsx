@@ -13,7 +13,7 @@ import { SnackbarProvider } from "notistack";
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <SnackbarProvider anchorOrigin={{ horizontal: "right", vertical: "top" }} autoHideDuration={3000}>
-      <App />
+        <App />
     </SnackbarProvider>
   </React.StrictMode>,
 );

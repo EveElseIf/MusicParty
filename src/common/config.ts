@@ -5,8 +5,11 @@ type Config = {
     app: {
         port: number
     },
+    redis: {
+        url: string
+    },
     provider: {
-        name: string
+        name: "netease" | "bilibili"
         cookie: string
         [key: string]: string
     }[]
