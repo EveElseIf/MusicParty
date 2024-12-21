@@ -1,12 +1,11 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import * as cookie from "cookie";
-import { ProviderName, Room } from '../common/lib/core.js';
-import { neteaseProviderName } from '../common/lib/netease/index.js';
-import { bilibiliProviderName } from '../common/lib/bilibili/index.js';
+import { bilibiliProviderName, MusicProviderUserProfile, neteaseProviderName, Provider, Room } from '../common/lib/core.js';
 import { z } from "zod";
 import data from "./data.js";
 import { genId } from "./utils.js";
+import registry from "./registry.js";
 
 export const createContext = async ({
     req,
@@ -27,17 +26,7 @@ type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create();
 
-const loggingMiddleware = t.middleware(async ({ path, type, next }) => {
-    try {
-        const result = await next();
-        return result;
-    } catch (error) {
-        console.error(`❌ [${type}] ${path} - Error occurred:`, error);
-        throw error;
-    }
-})
-
-const authProcedure = t.procedure.use(loggingMiddleware).use(({ ctx, next }) => {
+const authProcedure = t.procedure.use(({ ctx, next }) => {
     if (!ctx.id) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
     }
@@ -68,7 +57,7 @@ export const appRouter = t.router({
     getAvailableMusicProviders: authProcedure
         .query(async (opts) => {
             // TODO
-            const names: ProviderName[] = [
+            const names: Provider[] = [
                 neteaseProviderName,
                 bilibiliProviderName,
             ]
@@ -111,6 +100,29 @@ export const appRouter = t.router({
             const user = await data.getUser(opts.ctx.id!);
             if (!user) throw new TRPCError({ code: "NOT_FOUND" });
             return await data.roomUserHeatbeat(opts.input.roomId, user);
+        }),
+    searchUserWithProvider: authProcedure
+        .input(z.object({
+            keyword: z.string(),
+            offset: z.number().optional(),
+            provider: z.string()
+        }))
+        .query(async (opts) => {
+            const provider = registry.providers.get(opts.input.provider)
+            if (!provider) throw new TRPCError({ code: "BAD_REQUEST" })
+            return await provider.searchUser(opts.input.keyword, opts.input.offset ?? 0)
+        }),
+    bindCurrentUserWithProfile: authProcedure
+        .input(z.object({
+            provider: z.string(),
+            id: z.string(),
+            name: z.string()
+        }))
+        .mutation(async (opts) => {
+            const user = await data.getUser(opts.ctx.id!);
+            if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+            const profile = opts.input as MusicProviderUserProfile
+            return await data.setUserProfile(user, profile)
         }),
 });
 

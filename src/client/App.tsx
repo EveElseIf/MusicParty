@@ -3,8 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { trpc } from "./utils/trpc";
 import { httpBatchLink } from "@trpc/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
-import Room from "./components/Room";
-import Home from "./components/Home";
+import { Room } from "./components/Room";
+import { Home } from "./components/Home";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient({

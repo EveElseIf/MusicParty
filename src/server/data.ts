@@ -1,6 +1,6 @@
 import { Redis } from "ioredis"
 import { cfg } from "../common/config.js"
-import { Room, User } from "../common/lib/core.js";
+import { MusicProviderUserProfile, Provider, Room, User } from "../common/lib/core.js";
 import { exit } from "process";
 
 const r = new Redis(cfg.redis.url);
@@ -9,6 +9,7 @@ const keys = {
     user: (id: string) => `user.${id}`, // single user, hash id->user
     rooms: "room.rooms", // rooms, hash id->name
     roomUsers: (roomId: string) => `room.${roomId}.users`, // users in room, hash id->name
+    userProfile: (id: string, provider: Provider) => `user.${id}.${provider}`, // user profile, hash id.provider->profile
 
     heartbeat: {
         "roomUsers": "hb.room.users", // hearbeats to clean user from room, zset "roomId.userId" with UTC sec
@@ -58,15 +59,14 @@ r.ping().then(_ => {
 const data = {
     async getUser(id: string): Promise<User | null> {
         const k = keys.user(id)
-        const ret = await r.hgetall(k);
-        if (Object.keys(ret).length === 0) return null
+        const ret = await r.hgetall(k)
         return ret as unknown as User
     },
-    async setUser(user: User): Promise<number> {
+    async setUser(user: User) {
         const k = keys.user(user.id)
         return await r.hset(k, user)
     },
-    async addRoom(room: Room): Promise<number> {
+    async addRoom(room: Room) {
         const k = keys.rooms
         return await r.hset(k, [room.id, room.name])
     },
@@ -89,17 +89,25 @@ const data = {
         const result = await r.hgetall(k)
         return Object.entries(result).map(x => ({ id: x[0], name: x[1] }))
     },
-    async addRoomUser(roomId: string, user: User): Promise<number> {
+    async addRoomUser(roomId: string, user: User) {
         const k = keys.roomUsers(roomId)
         return await r.hset(k, [user.id, user.name])
     },
-    async removeRoomUser(roomId: string, user: User): Promise<number> {
+    async removeRoomUser(roomId: string, user: User) {
         const k = keys.roomUsers(roomId)
         return await r.hdel(k, user.id)
     },
-    async roomUserHeatbeat(roomId: string, user: User): Promise<number> {
+    async roomUserHeatbeat(roomId: string, user: User) {
         const k = keys.heartbeat.roomUsers
         return await r.zadd(k, Math.floor(Date.now() / 1000) + 60, `${roomId}.${user.id}`)
+    },
+    async setUserProfile(user: User, profile: MusicProviderUserProfile) {
+        const k = keys.userProfile(user.id, profile.provider)
+        return await r.hset(k, profile)
+    },
+    async getUserProfile(user: User, provider: Provider): Promise<MusicProviderUserProfile | null> {
+        const k = keys.userProfile(user.id, provider)
+        return await r.hgetall(k) as unknown as MusicProviderUserProfile
     }
 }
 

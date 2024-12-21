@@ -2,7 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import ViteExpress from "vite-express";
-import * as trpcExpress from "@trpc/server/adapters/express";
+// import * as trpcExpress from "@trpc/server/adapters/express";
 import { appRouter, createContext } from "./router.js";
 import { genId } from "./utils.js";
 import { cfg } from "../common/config.js";
@@ -28,10 +28,10 @@ app.use((req, resp, next) => {
   }
 });
 
-app.use("/trpc", trpcExpress.createExpressMiddleware({
-  router: appRouter,
-  createContext: createContext,
-}));
+// app.use("/trpc", trpcExpress.createExpressMiddleware({
+//   router: appRouter,
+//   createContext: createContext,
+// }));
 
 app.get("/hello", (_, res) => {
   res.send("Hello Vite + React + TypeScript!");
