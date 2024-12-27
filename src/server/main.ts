@@ -15,18 +15,18 @@ app.use(morgan("combined", {
 
 app.use(cookieParser());
 
-const expdate = new Date('9999-12-31T23:59:59.999Z')
-app.use((req, resp, next) => {
-  if (!req.cookies["id"]) {
-    resp.cookie("id", genId(), {
-      expires: expdate,
-    });
-    resp.redirect(req.url);
-    resp.end();
-  } else {
-    next();
-  }
-});
+// const expdate = new Date('9999-12-31T23:59:59.999Z')
+// app.use((req, resp, next) => {
+//   if (!req.cookies["id"]) {
+//     resp.cookie("id", genId(), {
+//       expires: expdate,
+//     });
+//     resp.redirect(req.url);
+//     resp.end();
+//   } else {
+//     next();
+//   }
+// });
 
 app.use("/trpc", trpcExpress.createExpressMiddleware({
   router: appRouter,

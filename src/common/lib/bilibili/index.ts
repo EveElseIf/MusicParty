@@ -1,9 +1,7 @@
-import { MusicProvider, MusicProviderUserProfile, User } from "../core.js";
-
-export const bilibiliProviderName = "BILIBILI"
+import { bilibiliProviderName, MusicProvider, MusicProviderUserProfile, Provider, User } from "../core.js";
 
 class BilibiliMusicProvider implements MusicProvider {
-    getProviderSpecifiedProfile(user: User): Promise<MusicProviderUserProfile> {
+    getUserProfile(user: User): Promise<MusicProviderUserProfile> {
         throw new Error("Method not implemented.");
     }
     bindUserWithProfile(user: User, profile: MusicProviderUserProfile): Promise<any> {
@@ -12,10 +10,10 @@ class BilibiliMusicProvider implements MusicProvider {
     getUserPlaylist(user: User): Promise<any> {
         throw new Error("Method not implemented.");
     }
-    get name(): string {
+    get provider(): Provider {
         return bilibiliProviderName
     }
-    searchUser(keyword: string): Promise<any> {
+    searchUser(keyword: string, offset: number): Promise<any> {
         throw new Error("Method not implemented.");
     }
     searchMusicByName(name: string): Promise<any> {

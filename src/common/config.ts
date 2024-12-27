@@ -8,7 +8,7 @@ type Config = {
     redis: {
         url: string
     },
-    provider: {
+    providers: {
         name: "netease" | "bilibili"
         cookie: string
         [key: string]: string
@@ -19,6 +19,7 @@ type Config = {
 const file = (process.env.NODE_ENV !== "production" ? "config.local.yaml" : "config.yaml");
 
 const content = fs.readFileSync(file).toString()
-const cfg = yaml.load(content) as Config
+const _cfg = yaml.load(content) as Config
+const cfg = _cfg
 
 export { cfg, type Config }

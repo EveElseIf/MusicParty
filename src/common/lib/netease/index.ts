@@ -1,6 +1,6 @@
-import { MusicProvider, MusicProviderUserProfile, User } from "../core.js";
-
-export const neteaseProviderName = "NETEASE";
+import { MusicProvider, MusicProviderUserProfile, neteaseProviderName, Provider, User } from "../core.js";
+import NeteaseCloudMusicApi from "NeteaseCloudMusicApi"
+const { search } = NeteaseCloudMusicApi
 
 class NeteaseMusicProvider implements MusicProvider {
 
@@ -8,7 +8,7 @@ class NeteaseMusicProvider implements MusicProvider {
     constructor(cookie: string) {
         this.cookie = cookie
     }
-    getProviderSpecifiedProfile(user: User): Promise<MusicProviderUserProfile> {
+    getUserProfile(user: User): Promise<MusicProviderUserProfile> {
         throw new Error("Method not implemented.");
     }
     bindUserWithProfile(user: User, profile: MusicProviderUserProfile): Promise<any> {
@@ -22,12 +22,25 @@ class NeteaseMusicProvider implements MusicProvider {
         //TODO
     }
 
-    public get name(): string {
+    public get provider(): Provider {
         return neteaseProviderName;
     }
 
-    searchUser(keyword: string): Promise<any> {
-        throw new Error("Method not implemented.");
+    async searchUser(keyword: string, offset: number): Promise<MusicProviderUserProfile[]> {
+        const result = await search({
+            keywords: keyword,
+            type: 1002,
+            offset: offset,
+            cookie: this.cookie,
+        })
+        if (result.body.code != 200) throw new Error(result.body as any);
+        const profiles = (result.body.result as any).userprofiles as any[]
+        const ret = profiles.map(x => ({
+            provider: neteaseProviderName,
+            id: String(x.userId),
+            name: x.nickname
+        }))
+        return ret
     }
     searchMusicByName(name: string): Promise<any> {
         throw new Error("Method not implemented.");

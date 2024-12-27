@@ -24,7 +24,7 @@ function CreateRoomModal({ onCreated }: { onCreated?: () => void }) {
     </>
 }
 
-export default function () {
+export function Home() {
     const roomQuery = trpc.getRooms.useQuery()
     const nav = useNavigate()
     return <>
