@@ -5,6 +5,7 @@ import { trpc } from "../utils/trpc";
 import { useNavigate, useParams } from "react-router";
 import { enqueueSnackbar } from "notistack";
 import { neteaseProviderName, bilibiliProviderName } from "../../common/lib/core";
+import { EnqueueMusicByIdView } from "./EnqueueMusicByIdView";
 
 const defaultCatch = (err: any) => {
     enqueueSnackbar(err, { variant: "error" })
@@ -244,7 +245,9 @@ export function Room() {
                         </TabList>
                     </Box>
                     <TabPanel value={0}>Item One</TabPanel>
-                    <TabPanel value={1}>Item Two</TabPanel>
+                    <TabPanel value={1}>
+                        <EnqueueMusicByIdView />
+                    </TabPanel>
                     <TabPanel value={2}>Item Three</TabPanel>
                 </TabContext>
             </Box>

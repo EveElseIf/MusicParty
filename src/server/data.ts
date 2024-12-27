@@ -1,5 +1,5 @@
 import { Redis } from "ioredis"
-import { cfg } from "../common/config.js"
+import { cfg } from "./config.js"
 import { MusicProviderUserProfile, Provider, Room, User } from "../common/lib/core.js";
 import { exit } from "process";
 
@@ -15,6 +15,7 @@ const keys = {
         rooms: "room:rooms", // id set
         info: (roomId: string) => `room:${roomId}:info`, // hash
         users: (roomId: string) => `room:${roomId}:users`, // id set
+        playing: (roomId: string) => `room:${roomId}:playing` // hash
     },
 
     heartbeat: {
@@ -136,6 +137,9 @@ const data = {
         const result = await r.hget(k, provider)
         if (!result) return null
         else return result as unknown as MusicProviderUserProfile
+    },
+    async setRoomPlaying(roomId: string): Promise<void> {
+
     }
 }
 

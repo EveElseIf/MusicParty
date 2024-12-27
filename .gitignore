@@ -1,4 +1,5 @@
 config.local.yaml
+config.prod.yaml
 
 # Logs
 logs

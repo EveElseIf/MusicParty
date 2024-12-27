@@ -1,17 +1,18 @@
 import { exit } from "process";
-import { cfg } from "../common/config.js";
+import { cfg } from "./config.js";
 import NeteaseMusicProvider from "../common/lib/netease/index.js";
 import { bilibiliProviderName, MusicProvider, neteaseProviderName } from "../common/lib/core.js";
 import BilibiliMusicProvider from "../common/lib/bilibili/index.js";
+import { PlayManager } from "./playmanager.js";
 
 let _providers: Map<string, MusicProvider> = new Map()
 
 cfg.providers.map(x => {
     switch (x.name) {
-        case "netease":
+        case "NETEASE":
             _providers = _providers.set(neteaseProviderName, new NeteaseMusicProvider(x.cookie))
             break
-        case "bilibili":
+        case "BILIBILI":
             _providers = _providers.set(bilibiliProviderName, new BilibiliMusicProvider())
             break
         default:
@@ -22,5 +23,6 @@ cfg.providers.map(x => {
 const providers = _providers
 
 export default {
-    providers
+    providers,
+    playmanager: new PlayManager()
 }

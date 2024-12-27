@@ -5,7 +5,7 @@ import ViteExpress from "vite-express";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { appRouter, createContext } from "./router.js";
 import { genId } from "./utils.js";
-import { cfg } from "../common/config.js";
+import { cfg } from "./config.js";
 
 const app = express();
 

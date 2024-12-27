@@ -3,7 +3,7 @@ app:
 redis:
   url: "redis://localhost:6379"
 providers:
-  - name: netease
+  - name: NETEASE
     cookie: ""
-  - name: bilibili
+  - name: BILIBILI
     sessdata: ""

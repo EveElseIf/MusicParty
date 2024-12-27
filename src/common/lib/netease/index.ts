@@ -1,6 +1,6 @@
-import { MusicProvider, MusicProviderUserProfile, neteaseProviderName, Provider, User } from "../core.js";
+import { MusicInfo, MusicProvider, MusicProviderUserProfile, neteaseProviderName, Provider, User } from "../core.js";
 import NeteaseCloudMusicApi from "NeteaseCloudMusicApi"
-const { search } = NeteaseCloudMusicApi
+const { search, song_detail } = NeteaseCloudMusicApi
 
 class NeteaseMusicProvider implements MusicProvider {
 
@@ -45,8 +45,21 @@ class NeteaseMusicProvider implements MusicProvider {
     searchMusicByName(name: string): Promise<any> {
         throw new Error("Method not implemented.");
     }
-    getMusicById(): Promise<any> {
-        throw new Error("Method not implemented.");
+    async getMusicById(id: string): Promise<MusicInfo> {
+        const result = await song_detail({ ids: id, cookie: this.cookie })
+        if (result.body.code != 200) throw new Error(result.body as any);
+        if (result.body.songs.length === 0) {
+            throw new Error("music not found")
+        }
+        const song = result.body.songs[0]
+        const info: MusicInfo = {
+            provider: neteaseProviderName,
+            name: song.name,
+            id,
+            length: song.dt,
+            artists: song.ar.map(x => x.name),
+        }
+        return info
     }
     getMusicFromPlaylist(playlistId: string, offset: number): Promise<any> {
         throw new Error("Method not implemented.");

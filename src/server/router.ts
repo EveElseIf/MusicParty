@@ -1,6 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import * as cookie from "cookie";
 import { MusicProviderUserProfile, Room } from '../common/lib/core.js';
 import { z } from "zod";
 import data from "./data.js";
@@ -50,6 +49,19 @@ const authProcedure = t.procedure.use(({ ctx, next }) => {
     }
     return next();
 });
+
+const musicProviderProcedure = t.procedure.input(z.object({ providerName: z.string() })).use(({ ctx, next, input }) => {
+    const provider = registry.providers.get(input.providerName)
+    if (!provider) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `provider ${input.providerName} not found` })
+    }
+    return next({
+        ctx: {
+            ...ctx,
+            provider
+        }
+    })
+})
 
 export const appRouter = t.router({
     getCurrentUser: authProcedure
@@ -127,6 +139,12 @@ export const appRouter = t.router({
         .mutation(async (opts) => {
             const profile = opts.input as MusicProviderUserProfile
             return await data.setUserProfile(opts.ctx.id!, profile)
+        }),
+    enqueueMusic: musicProviderProcedure
+        .input(z.object({ targetId: z.string() }))
+        .mutation(async (opts) => {
+            const music = await opts.ctx.provider.getMusicById(opts.input.targetId);
+            await registry.playmanager.enqueueMusic(music);
         }),
 });
 
